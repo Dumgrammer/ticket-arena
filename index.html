@@ -1,0 +1,927 @@
+<meta name="dash-one-writer">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@500&display=swap');
+/* Layout: arena hero band, KO-meter stat row, then three "rounds": ticket progress, PR comments, combo moves. */
+#dash-root { --dash-gutter: 0; }
+.ta {
+  --ta-bg: #0c0a17; --ta-panel: #161229; --ta-panel-2: #1e1838; --ta-line: #2e2752;
+  --ta-ink: #f5f2ff; --ta-muted: #a8a1c9;
+  --ta-pink: #ff2d8d; --ta-yellow: #ffe03d; --ta-cyan: #33dcff; --ta-ok: #77f56a; --ta-bad: #ff5a4e;
+  --ta-display: 'Anton', Impact, 'Arial Narrow Bold', sans-serif;
+  --ta-body: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+  --ta-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+  background: var(--ta-bg); color: var(--ta-ink); font-family: var(--ta-body); font-size: 15px; line-height: 1.45;
+  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0); background-size: 14px 14px;
+  overflow: hidden;
+}
+.ta-wrap { padding: 28px max(16px, 4vw) 48px; display: grid; gap: 40px; max-width: 1240px; margin: 0 auto; }
+.ta h2, .ta h1 { font-family: var(--ta-display); font-weight: 400; text-transform: uppercase; letter-spacing: .01em; margin: 0; text-wrap: balance; line-height: .95; }
+
+/* hero */
+.ta-hero { position: relative; isolation: isolate; padding: 30px max(16px, 4vw) 34px; border-bottom: 3px solid var(--ta-pink); overflow: hidden; }
+.ta-hero::before { content: ""; position: absolute; inset: -40% -10% auto auto; width: 60%; height: 220%; background: linear-gradient(115deg, transparent 0 30%, rgba(255,45,141,.22) 30% 46%, rgba(255,224,61,.16) 46% 54%, transparent 54%); z-index: -1; }
+.ta-hero-in { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
+.ta-eyebrow { font-weight: 700; font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--ta-yellow); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ta-eyebrow i { width: 26px; height: 3px; background: var(--ta-pink); transform: skewX(-30deg); display: inline-block; }
+.ta-hero h1 { font-size: clamp(48px, 9vw, 104px); font-style: italic; transform: skewX(-6deg); transform-origin: left; }
+.ta-hero h1 span { color: var(--ta-pink); -webkit-text-stroke: 0; }
+.ta-hero h1 em { font-style: inherit; color: transparent; -webkit-text-stroke: 2px var(--ta-yellow); }
+.ta-lead { max-width: 62ch; font-size: 17px; color: var(--ta-muted); margin: 4px 0 0; }
+.ta-lead b { color: var(--ta-ink); font-weight: 700; }
+
+/* KO meters */
+.ta-meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 165px), 1fr)); gap: 14px; }
+.ta-meter { position: relative; padding: 16px 18px 14px; background: var(--ta-panel); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 16px), calc(100% - 16px) 100%, 0 100%); border-top: 3px solid var(--c, var(--ta-pink)); }
+.ta-meter .lbl { font-size: 12px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--ta-muted); }
+.ta-meter .num { font-family: var(--ta-display); font-size: 54px; line-height: 1; color: var(--c, var(--ta-pink)); font-variant-numeric: tabular-nums; margin: 6px 0 4px; }
+.ta-meter .sub { font-size: 13px; color: var(--ta-muted); }
+
+/* section heads */
+.ta-sec { display: grid; gap: 16px; min-width: 0; }
+.ta-head { display: flex; align-items: end; justify-content: space-between; gap: 12px 20px; flex-wrap: wrap; }
+.ta-head h2 { font-size: clamp(30px, 4.5vw, 44px); display: flex; align-items: baseline; gap: 14px; }
+.ta-round { font-family: var(--ta-body); font-size: 12px; font-weight: 700; letter-spacing: .2em; color: var(--ta-bg); background: var(--ta-yellow); padding: 4px 10px; transform: skewX(-14deg); display: inline-block; }
+.ta-note { color: var(--ta-muted); font-size: 13px; max-width: 60ch; margin: 0; }
+
+/* stage legend */
+.ta-legend { display: flex; gap: 6px; flex-wrap: wrap; font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--ta-muted); }
+.ta-legend span { padding: 3px 9px; border: 1px solid var(--ta-line); transform: skewX(-12deg); }
+
+/* ticket table */
+.ta-scroll { overflow-x: auto; background: var(--ta-panel); border: 1px solid var(--ta-line); }
+.ta table { border-collapse: collapse; width: 100%; min-width: 720px; font-variant-numeric: tabular-nums; }
+.ta th { text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ta-muted); padding: 12px 14px; border-bottom: 2px solid var(--ta-line); white-space: nowrap; }
+.ta td { padding: 12px 14px; border-bottom: 1px solid var(--ta-line); vertical-align: middle; }
+.ta tbody tr:hover { background: var(--ta-panel-2); }
+.ta tr.is-picked { background: var(--ta-panel-2); box-shadow: inset 4px 0 0 var(--ta-yellow); }
+.ta .key { font-family: var(--ta-mono); font-size: 13px; color: var(--ta-cyan); white-space: nowrap; }
+.ta .ttl { max-width: 44ch; }
+.ta .ttl a { color: var(--ta-ink); text-decoration: none; }
+.ta .ttl a:hover { color: var(--ta-yellow); text-decoration: underline; }
+.ta .dim { color: var(--ta-muted); font-size: 13px; white-space: nowrap; }
+.ta-life { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; width: 150px; }
+.ta-life i { height: 12px; background: var(--ta-line); transform: skewX(-24deg); }
+.ta-life i.on { background: var(--sc); box-shadow: 0 0 10px var(--sc); }
+.ta-stage { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--sc); margin-top: 5px; white-space: nowrap; }
+
+/* buttons */
+.ta-btn { font: 700 12px/1 var(--ta-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ta-bg); background: var(--ta-yellow); border: 0; padding: 9px 14px; cursor: pointer; clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%); white-space: nowrap; }
+.ta-btn:hover { background: var(--ta-pink); color: var(--ta-ink); }
+.ta-btn:focus-visible, .ta-chip:focus-visible, .ta-input:focus-visible { outline: 2px solid var(--ta-cyan); outline-offset: 3px; }
+.ta-btn.ghost { background: transparent; color: var(--ta-yellow); box-shadow: inset 0 0 0 2px var(--ta-yellow); clip-path: none; }
+.ta-btn.ghost:hover { background: var(--ta-yellow); color: var(--ta-bg); }
+
+/* comments */
+.ta-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.ta-chip { font: 700 12px/1 var(--ta-body); letter-spacing: .1em; text-transform: uppercase; color: var(--ta-muted); background: var(--ta-panel); border: 1px solid var(--ta-line); padding: 9px 14px; cursor: pointer; transform: skewX(-12deg); }
+.ta-chip[aria-pressed="true"] { color: var(--ta-bg); background: var(--ta-cyan); border-color: var(--ta-cyan); }
+.ta-feed { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; min-height: 120px; }
+.ta-card { background: var(--ta-panel); border-left: 4px solid var(--sv); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.ta-card.reply { background: linear-gradient(90deg, rgba(255,45,141,.14), var(--ta-panel) 60%); }
+.ta-card-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--ta-muted); }
+.ta-tag { font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--ta-bg); background: var(--sv); padding: 3px 7px; }
+.ta-who { color: var(--ta-ink); font-weight: 600; }
+.ta-card p { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.ta-card-foot { display: flex; justify-content: space-between; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--ta-muted); }
+.ta-card-foot a { color: var(--ta-cyan); font-weight: 600; text-decoration: none; }
+.ta-card-foot a:hover { text-decoration: underline; }
+.ta-flag { color: var(--ta-pink); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.ta-empty { color: var(--ta-muted); padding: 20px; border: 1px dashed var(--ta-line); }
+
+/* combos */
+.ta-pick { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.ta-pick label { font-size: 12px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ta-muted); }
+.ta-input { font: 600 16px var(--ta-mono); color: var(--ta-ink); background: var(--ta-panel); border: 2px solid var(--ta-line); padding: 8px 12px; width: 9ch; }
+.ta-combos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 14px; }
+.ta-combo { background: var(--ta-panel); padding: 16px; display: grid; gap: 10px; align-content: start; position: relative; border: 1px solid var(--ta-line); min-width: 0; }
+.ta-combo h3 { margin: 0; font-family: var(--ta-display); font-weight: 400; font-size: 22px; text-transform: uppercase; letter-spacing: .02em; }
+.ta-combo .inputs { font-family: var(--ta-mono); font-size: 11px; color: var(--ta-yellow); letter-spacing: .1em; }
+.ta-combo p { margin: 0; color: var(--ta-muted); font-size: 13px; }
+.ta-cmd { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
+.ta-cmd code { flex: 1; min-width: 0; font: 500 13px var(--ta-mono); background: var(--ta-bg); color: var(--ta-ok); padding: 9px 10px; overflow-x: auto; white-space: nowrap; border: 1px solid var(--ta-line); user-select: all; }
+.ta-copy { position: relative; }
+.ta-copy.done { background: var(--ta-ok); }
+.ta-copy.done::after { content: "Copied"; position: absolute; inset: 0; display: grid; place-items: center; background: var(--ta-ok); color: var(--ta-bg); clip-path: inherit; }
+
+.ta-foot { border-top: 1px solid var(--ta-line); padding-top: 16px; color: var(--ta-muted); font-size: 13px; }
+.ta-foot summary { cursor: pointer; font-weight: 700; color: var(--ta-ink); }
+.ta-foot ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; max-width: 75ch; }
+.ta-alerts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; list-style: none; margin: 0; padding: 0; }
+.ta-alert { position: relative; background: linear-gradient(100deg, rgba(255,90,78,.22), var(--ta-panel) 70%); border: 2px solid var(--ta-bad); padding: 14px 16px; display: grid; gap: 8px; min-width: 0; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%); }
+.ta-alert-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.ta-alert .days { font-family: var(--ta-display); font-size: 40px; line-height: 1; color: var(--ta-bad); font-variant-numeric: tabular-nums; }
+.ta-alert .days small { font-family: var(--ta-body); font-size: 13px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; margin-left: 4px; }
+.ta-alert p { margin: 0; font-size: 14px; }
+.ta-alert .why { color: var(--ta-muted); font-size: 13px; }
+.ta-alert .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ta-clear { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border: 1px dashed var(--ta-ok); color: var(--ta-ok); font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; }
+.ta-age { font-family: var(--ta-mono); font-size: 13px; white-space: nowrap; color: var(--ta-muted); }
+.ta-age.warn { color: var(--ta-yellow); }
+.ta-age.over { color: var(--ta-bad); font-weight: 700; }
+.ta-age.over::before { content: "▲ "; }
+.ta-dec { display: inline-block; margin-left: 8px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 2px 6px; border: 1px solid var(--ta-bad); color: var(--ta-bad); vertical-align: middle; }
+.ta-sync { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ta-ok); }
+.ta-syncrow { display: flex; gap: 14px 18px; align-items: center; flex-wrap: wrap; }
+.ta-sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--ta-ok); box-shadow: 0 0 8px var(--ta-ok); }
+@media (prefers-reduced-motion: no-preference) {
+  .ta-sync i { animation: ta-pulse 2s ease-in-out infinite; }
+  .ta-alert { animation: ta-flash 1.6s ease-in-out 2; }
+  @keyframes ta-pulse { 50% { opacity: .3; } }
+  @keyframes ta-flash { 50% { border-color: var(--ta-yellow); } }
+}
+.ta-follow { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.ta-follow li { display: grid; grid-template-columns: auto 1fr auto; gap: 6px 16px; align-items: center; background: var(--ta-panel); border: 1px solid var(--ta-line); border-left: 4px solid var(--ta-yellow); padding: 12px 14px; min-width: 0; }
+.ta-follow .ttl { min-width: 0; overflow-wrap: anywhere; }
+.ta-follow .meta { grid-column: 2; color: var(--ta-muted); font-size: 12px; }
+.ta-follow .ta-pill { grid-column: 3; grid-row: 1 / span 2; }
+.ta-follow .ta-btn.done::after { content: "Copied, paste in Claude Code"; position: absolute; inset: 0; display: grid; place-items: center; background: var(--ta-ok); color: var(--ta-bg); font-size: 10px; padding: 0 10px; }
+.ta-follow .ta-btn { position: relative; }
+.ta-sub { font-family: var(--ta-display); font-weight: 400; font-size: 22px; text-transform: uppercase; margin: 0; letter-spacing: .02em; }
+@media (max-width: 560px) { .ta-follow li { grid-template-columns: 1fr; } .ta-follow .meta, .ta-follow .ta-pill { grid-column: 1; grid-row: auto; justify-self: start; } }
+.ta-switch { display: grid; grid-template-columns: auto 1fr; gap: 14px 20px; align-items: center; background: var(--ta-panel); border: 1px solid var(--ta-line); padding: 16px 18px; }
+.ta-lamp { font-family: var(--ta-display); font-size: 34px; line-height: 1; padding: 6px 16px 8px; transform: skewX(-10deg); color: var(--ta-bg); background: var(--ta-muted); }
+.ta-lamp.on { background: var(--ta-ok); box-shadow: 0 0 18px rgba(119,245,106,.45); }
+.ta-switch .how { display: grid; gap: 8px; min-width: 0; }
+.ta-switch .how p { margin: 0; color: var(--ta-muted); font-size: 13px; }
+.ta-switch .ta-cmd { max-width: 560px; }
+.ta-pill { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; padding: 3px 8px; border: 1px solid currentColor; white-space: nowrap; }
+.ta-pill.on { color: var(--ta-ok); } .ta-pill.off { color: var(--ta-muted); } .ta-pill.skipped { color: var(--ta-yellow); }
+@media (max-width: 560px) { .ta-switch { grid-template-columns: 1fr; } }
+.ta-pill.req { color: var(--ta-pink); }
+.ta-pill.reply { color: var(--ta-bg); background: var(--ta-pink); border-color: var(--ta-pink); text-decoration: none; }
+.ta-pill.reply:hover { background: var(--ta-yellow); border-color: var(--ta-yellow); }
+.ta tr.is-replied { box-shadow: inset 4px 0 0 var(--ta-pink); }
+.ta-pill.ok { color: var(--ta-ok); }
+.ta-pill.bad { color: var(--ta-bad); }
+.ta-pill.muted { color: var(--ta-muted); }
+.ta-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+.ta .who { white-space: nowrap; font-weight: 600; }
+.ta-drafts { display: grid; gap: 14px; }
+.ta-draft { background: var(--ta-panel); border: 1px solid var(--ta-line); border-top: 3px solid var(--ta-cyan); padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.ta-draft h3 { margin: 0; font-family: var(--ta-display); font-weight: 400; font-size: 22px; text-transform: uppercase; overflow-wrap: anywhere; }
+.ta-draft .sum { margin: 0; color: var(--ta-ink); font-size: 14px; max-width: 80ch; overflow-wrap: anywhere; white-space: pre-wrap; }
+.ta-draft ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ta-draft li { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 10px 12px; background: var(--ta-bg); border: 1px solid var(--ta-line); min-width: 0; }
+.ta-draft li.off { opacity: .45; }
+.ta-draft li input { margin-top: 3px; accent-color: var(--ta-cyan); width: 16px; height: 16px; }
+.ta-draft .loc { font-family: var(--ta-mono); font-size: 12px; color: var(--ta-cyan); overflow-wrap: anywhere; }
+.ta-draft .body { grid-column: 2; font-size: 14px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.ta-draft .acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.ta-controls { display: flex; gap: 10px 16px; flex-wrap: wrap; align-items: center; }
+.ta-filter { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.ta-filter-btn { font: 600 13px var(--ta-body); color: var(--ta-ink); background: var(--ta-panel); border: 1px solid var(--ta-line); padding: 6px 30px 6px 10px; cursor: pointer; position: relative; min-width: 150px; text-align: left; }
+.ta-filter-btn::after { content: "▾"; position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--ta-muted); }
+.ta-filter-btn.active { border-color: var(--ta-cyan); color: var(--ta-cyan); }
+.ta-filter-btn:focus-visible { outline: 2px solid var(--ta-cyan); outline-offset: 3px; }
+.ta-filter-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; width: min(300px, calc(100vw - 32px)); max-height: 420px; overflow-y: auto; background: var(--ta-panel-2); border: 1px solid var(--ta-line); box-shadow: 0 12px 40px rgba(0,0,0,.55); padding: 10px; display: grid; gap: 10px; }
+.ta-filter-menu[hidden] { display: none; }
+.ta-filter-menu fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 2px; }
+.ta-filter-menu legend { font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--ta-yellow); padding: 0 0 4px; }
+.ta-filter-menu label { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ta-ink); padding: 5px 6px; cursor: pointer; }
+.ta-filter-menu label:hover { background: var(--ta-panel); }
+.ta-filter-menu input { accent-color: var(--ta-cyan); width: 15px; height: 15px; margin: 0; }
+.ta-filter-menu .n { margin-left: auto; color: var(--ta-muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.ta-filter-menu .clear { justify-self: start; font: 700 11px var(--ta-body); letter-spacing: .12em; text-transform: uppercase; color: var(--ta-pink); background: none; border: 0; cursor: pointer; padding: 4px 6px; }
+.ta-sortsel { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ta-muted); }
+.ta-sortsel select { font: 600 13px var(--ta-body); color: var(--ta-ink); background-color: var(--ta-panel); border: 1px solid var(--ta-line); padding: 6px 28px 6px 10px; letter-spacing: 0; text-transform: none; }
+.ta [data-dash-source-state=refreshing] { opacity: .5; }
+@media (prefers-reduced-motion: no-preference) {
+  .ta-life i.on { animation: ta-charge .5s var(--cds-ease-out, ease-out) both; }
+  @keyframes ta-charge { from { transform: skewX(-24deg) scaleX(0); } }
+}
+@media (max-width: 560px) { .ta-hero h1 { transform: none; } .ta-meter .num { font-size: 44px; } }
+</style>
+
+<div class="ta">
+  <header class="ta-hero" id="top">
+    <div class="ta-hero-in">
+      <div class="ta-eyebrow"><i></i><span data-cfg="repo">your repo</span> <i></i><span data-cfg="login">you</span></div>
+      <h1>Ticket <span>Arena</span> <em>2x</em></h1>
+      <p class="ta-lead"><b data-draw="lead-promoting" data-source="stats" data-field="promoting" data-row="0">—</b> ticket on its way to <span data-cfg="staging">staging</span>, <b data-draw="lead-merged" data-source="stats" data-field="merged" data-row="0">—</b> merged to main, and <b data-draw="lead-reply" data-source="stats" data-field="needsReply" data-row="0">—</b> review comments with no reply from you yet. Tickets past the stuck limit: <b data-draw="lead-stuck" data-source="stats" data-field="stuck" data-row="0">—</b>.</p>
+      <div class="ta-syncrow"><div class="ta-sync"><i></i>Syncs from GitHub every <span data-cfg="refreshMinutes">15</span> minutes</div><span data-draw="refresh-btn"></span></div>
+    </div>
+  </header>
+
+  <div class="ta-wrap">
+    <section class="ta-meters" id="meters" aria-label="Summary">
+      <div class="ta-meter" style="--c: var(--ta-yellow)"><div class="lbl">In review</div><div class="num" data-draw="m-review" data-source="stats" data-field="review" data-row="0">—</div><div class="sub">PR open against main</div></div>
+      <div class="ta-meter" style="--c: var(--ta-cyan)"><div class="lbl">Merged to main</div><div class="num" data-draw="m-merged" data-source="stats" data-field="merged" data-row="0">—</div><div class="sub">Done unless it needs staging</div></div>
+      <div class="ta-meter" style="--c: var(--ta-pink)"><div class="lbl">Promoting</div><div class="num" data-draw="m-promoting" data-source="stats" data-field="promoting" data-row="0">—</div><div class="sub">PR open to a staging branch</div></div>
+      <div class="ta-meter" style="--c: var(--ta-ok)"><div class="lbl">On staging</div><div class="num" data-draw="m-staging" data-source="stats" data-field="staging" data-row="0">—</div><div class="sub" data-cfg="promoList">a staging branch</div></div>
+      <div class="ta-meter" style="--c: var(--ta-bad)"><div class="lbl">Needs your reply</div><div class="num" data-draw="m-reply" data-source="stats" data-field="needsReply" data-row="0">—</div><div class="sub">Findings with no answer after them</div></div>
+      <div class="ta-meter" style="--c: var(--ta-bad)"><div class="lbl">Stuck</div><div class="num" data-draw="m-stuck" data-source="stats" data-field="stuck" data-row="0">—</div><div class="sub"><span data-cfg="stuckReview">2</span>+ days in review or promotion</div></div>
+    </section>
+
+    <section class="ta-sec" id="stuck">
+      <div class="ta-head">
+        <h2><span class="ta-round">Danger zone</span> Stuck tickets</h2>
+      </div>
+      <p class="ta-note">A ticket is stuck when its PR has sat open in review, or open for promotion to staging, past its limit (<span data-cfg="stuckReview">2</span> days in review, <span data-cfg="stuckPromo">2</span> in promotion). Merged and staged tickets never count. A refresh that finds a newly stuck ticket also sends you a notification.</p>
+      <ul class="ta-alerts" data-draw="stuck-list" data-source="stage_age"></ul>
+    </section>
+
+    <section class="ta-sec" id="tickets">
+      <div class="ta-head">
+        <h2><span class="ta-round">Round 1</span> Ticket progress</h2>
+        <div class="ta-controls"><div class="ta-filter" data-filter-key="tickets"><span class="ta-sortsel">Show</span><button class="ta-filter-btn" type="button" aria-haspopup="true" aria-expanded="false" data-draw="filter-label-tickets">All</button><div class="ta-filter-menu" hidden data-draw="filter-menu-tickets"></div></div><label class="ta-sortsel" for="ta-t-sort">Sort <select class="dash-select" id="ta-t-sort"><option value="updated">Recently updated</option><option value="days">Longest in stage</option><option value="stage">By stage</option><option value="ticket">Ticket number</option><option value="lines">Biggest change</option></select></label></div>
+      </div>
+      <p class="ta-note">Each <span data-cfg="ticketPrefix">EDGE</span> ticket from your PR titles, at the furthest stage any of its PRs reached, and how long it has sat there. Pick a ticket to load it into the combo moves below.</p>
+      <div class="ta-scroll">
+        <table data-source="tickets" data-row-key="key" aria-label="Tickets">
+          <thead><tr><th data-field="key">Ticket</th><th data-field="title">Title</th><th data-field="stage">Stage</th><th data-source="stage_age" data-field="days">In stage</th><th data-field="pr">Latest PR</th><th data-field="lines">Lines changed</th><th data-field="updated">Updated</th><th>Combo</th></tr></thead>
+          <tbody data-draw="ticket-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="ta-sec" id="comments">
+      <div class="ta-head">
+        <h2><span class="ta-round">Round 2</span> PR comments</h2>
+
+      </div>
+      <h3 class="ta-sub">Follow-ups</h3>
+      <p class="ta-note">When follow-ups are on, every open PR that isn't merged yet gets "<span data-cfg="firstMessage">please review</span>" posted to <span data-cfg="chatSpaceName">your Chat space</span> on a timer, with <span data-cfg="ccNames">the PR's reviewers</span> in cc. A PR drops off as soon as it merges. Drafts and promotion PRs are left out.</p>
+      <div class="ta-switch" data-draw="follow-switch" data-source="tickets"></div>
+      <ul class="ta-follow" data-draw="followups" data-source="tickets"></ul>
+      <div class="ta-head">
+        <h3 class="ta-sub">Comments</h3>
+<div class="ta-controls"><div class="ta-filter" data-filter-key="comments"><span class="ta-sortsel">Show</span><button class="ta-filter-btn" type="button" aria-haspopup="true" aria-expanded="false" data-draw="filter-label-comments">All</button><div class="ta-filter-menu" hidden data-draw="filter-menu-comments"></div></div><label class="ta-sortsel" for="ta-comment-sort">Sort <select class="dash-select" id="ta-comment-sort"><option value="newest">Newest first</option><option value="oldest">Oldest first</option><option value="severity">Most severe first</option><option value="reviewer">By reviewer</option><option value="pr">By PR</option></select></label></div>
+      </div>
+      <p class="ta-note">Review comments and review summaries on your open PRs, newest first. Once a PR is merged its comments drop off, since merging resolves them. A finding needs a reply when nobody has answered it since it was posted.</p>
+      <ul class="ta-feed" data-draw="comment-feed" data-source="comments" aria-live="polite"></ul>
+    </section>
+
+    <section class="ta-sec" id="team">
+      <div class="ta-head">
+        <h2><span class="ta-round">Round 4</span> Team PRs</h2>
+<div class="ta-controls"><div class="ta-filter" data-filter-key="team"><span class="ta-sortsel">Show</span><button class="ta-filter-btn" type="button" aria-haspopup="true" aria-expanded="false" data-draw="filter-label-team">All</button><div class="ta-filter-menu" hidden data-draw="filter-menu-team"></div></div><label class="ta-sortsel" for="ta-team-sort">Sort <select class="dash-select" id="ta-team-sort"><option value="status">Needs attention first</option><option value="newest">Newest PRs</option><option value="oldest">Open the longest</option><option value="author">By author</option><option value="lines">Biggest change</option><option value="updated">Recently updated</option></select></label></div>
+      </div>
+      <p class="ta-note">Open PRs from everyone in your Chat list. A pink "replied to you" badge means someone answered one of your review comments or @mentioned you and you haven't responded yet; those PRs sort to the top. Draft review asks Claude to review the PR and write comments for you. Nothing reaches GitHub until you press Post. PRs that request your review are drafted automatically.</p>
+      <div class="ta-scroll">
+        <table data-source="team" data-row-key="pr" aria-label="Team PRs">
+          <thead><tr><th data-field="pr">PR</th><th data-field="name">Author</th><th data-field="title">Title</th><th data-field="decision">Status</th><th data-field="opened">Open for</th><th data-field="lines">Lines</th><th>Review</th></tr></thead>
+          <tbody data-draw="team-rows"></tbody>
+        </table>
+      </div>
+      <h3 class="ta-sub">Review drafts</h3>
+      <p class="ta-note">Untick any comment you don't want, then press Post. The rest are posted to GitHub as one review from you.</p>
+      <div class="ta-drafts" data-draw="draft-cards" data-source="drafts"></div>
+    </section>
+
+    <section class="ta-sec" id="combos">
+      <div class="ta-head">
+        <h2><span class="ta-round">Round 3</span> Combo moves</h2>
+        <div class="ta-pick">
+          <label for="ta-ticket">Ticket</label>
+          <input class="ta-input" id="ta-ticket" inputmode="numeric" pattern="[0-9]*" aria-label="Ticket number" data-draw="ticket-input">
+          <label for="ta-pr">PR</label>
+          <input class="ta-input" id="ta-pr" inputmode="numeric" pattern="[0-9]*" aria-label="PR number" data-draw="pr-input">
+        </div>
+      </div>
+      <p class="ta-note">Copy a command and paste it into Claude Code or your terminal. The slash commands need the start-ticket and resolve-pr-ticket skills installed in your Claude Code.</p>
+      <div class="ta-combos" data-draw="combo-cards"></div>
+    </section>
+
+    <footer class="ta-foot">
+      <details>
+        <summary>Where these numbers come from</summary>
+        <ul>
+          <li>Tickets and stages come from your 50 most recent PRs in <span data-cfg="repo">your repo</span>, read with the GitHub CLI by a refresh that runs every <span data-cfg="refreshMinutes">15</span> minutes inside the Ticket Arena container. Stage is worked out from each PR's target branch and state, and from teammates' "Promote #PR" PRs, not from Jira.</li>
+          <li>Days in stage count from when the PR was opened (review, promoting) or merged (main, staging). The stuck limit is <span data-cfg="stuckReview">2</span> days for review and <span data-cfg="stuckPromo">2</span> for promotion (config.json).</li>
+          <li>Jira status, sprint and story points are not shown: everything comes from GitHub.</li>
+          <li>Comments come from your open PRs only. Copilot quota notices are left out.</li>
+        </ul>
+      </details>
+    </footer>
+  </div>
+</div>
+
+<script>
+// Settings come from config.json via control.py (window.TA_CONFIG). Defaults keep the page working without it.
+window.TA_CFG = Object.assign({ repo: '', login: '', key: '', ticketPrefix: 'EDGE', promoBranches: ['staging', 'stage', 'demo'],
+  stuckDays: { review: 2, promoting: 2 }, refreshMinutes: 15, chatSpaceName: 'your Chat space', ccNames: [], firstMessage: '' }, window.TA_CONFIG || {});
+(() => {
+  const c = window.TA_CFG;
+  const text = { repo: c.repo, login: c.login, staging: c.promoBranches[0], refreshMinutes: c.refreshMinutes,
+    promoList: c.promoBranches.join(' or '), stuckReview: c.stuckDays.review, stuckPromo: c.stuckDays.promoting,
+    ticketPrefix: c.ticketPrefix, firstMessage: c.firstMessage, chatSpaceName: c.chatSpaceName,
+    ccNames: c.ccNames.length ? c.ccNames.join(', ') + " and the PR's reviewers" : "the PR's reviewers" };
+  const fill = () => document.querySelectorAll('[data-cfg]').forEach((el) => {
+    const v = text[el.dataset.cfg]; if (v !== undefined && v !== '' && v !== null) el.textContent = v; });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fill); else fill();
+})();
+</script>
+<script>
+window.ta = window.ta || { filter: 'reply', ticket: null, pr: null };
+window.ta.sort = window.ta.sort || { tickets: { key: 'updated', dir: -1 }, team: { key: 'decision', dir: 1 } };
+window.ta.commentSort = window.ta.commentSort || 'newest';
+// rank tables: lower sorts first when ascending
+window.TA_RANK = {
+  stage: { review: 0, promoting: 1, merged: 2, staging: 3, closed: 4 },
+  decision: { CHANGES_REQUESTED: 1, REVIEW_REQUIRED: 2, '': 3, APPROVED: 4 },
+  severity: { Blocking: 0, High: 1, Changes: 2, Medium: 3, Issue: 4, Low: 5, Nit: 6, Note: 7, Pass: 8, Approve: 9 },
+};
+// sort rows by a getter; strings compare case-insensitively, ties keep newest updated first
+window.taSortRows = (rows, getter, dir) => rows.slice().sort((a, b) => {
+  const x = getter(a), y = getter(b);
+  const c = typeof x === 'string' && typeof y === 'string' ? x.localeCompare(y, undefined, { sensitivity: 'base', numeric: true }) : (x > y) - (x < y);
+  return c * dir || String(b.updated || '').localeCompare(String(a.updated || ''));
+});
+window.ta.view = Object.assign({ tShow: 'all', tSort: 'updated', cShow: 'reply', teamShow: 'all', teamSort: 'status' }, window.ta.view || {});
+[['ta-t-sort', 'tSort', 'ticket-rows'],
+ ['ta-comment-sort', 'commentSort', 'comment-feed'], ['ta-team-sort', 'teamSort', 'team-rows']].forEach(([id, key, draw]) => {
+  document.querySelectorAll('#' + id).forEach((el) => {
+    el.value = key === 'commentSort' ? window.ta.commentSort : window.ta.view[key];
+    el.addEventListener('change', () => {
+      if (key === 'commentSort') window.ta.commentSort = el.value; else window.ta.view[key] = el.value;
+      dash.draw(draw);
+    });
+  });
+});
+
+// ---- multi-select Show filters --------------------------------------------
+// spec per list: groups() -> [{id, label, mode: 'or'|'and', options: [{value, label, count}]}],
+// test(row, groupId, value) -> bool. Empty group = no restriction. 'or' groups match any ticked
+// value; 'and' groups must match every ticked value. Groups always combine with AND.
+window.ta.filters = window.ta.filters || { tickets: {}, comments: { show: ['reply'] }, team: {} };
+window.taFilterSpec = window.taFilterSpec || {};
+window.taFilterDraw = { tickets: 'ticket-rows', comments: 'comment-feed', team: 'team-rows' };
+window.taFilterPass = (key, row) => {
+  const spec = window.taFilterSpec[key]; if (!spec) return true;
+  const st = window.ta.filters[key] || {};
+  return spec.groups().every((g) => {
+    const on = st[g.id] || []; if (!on.length) return true;
+    return g.mode === 'and' ? on.every((v) => spec.test(row, g.id, v)) : on.some((v) => spec.test(row, g.id, v));
+  });
+};
+const taFilterCount = (key) => Object.values(window.ta.filters[key] || {}).reduce((n, a) => n + a.length, 0);
+['tickets', 'comments', 'team'].forEach((key) => {
+  dash.draw('filter-label-' + key, (btn) => {
+    const n = taFilterCount(key);
+    btn.textContent = n ? `${n} filter${n === 1 ? '' : 's'} on` : 'All';
+    btn.classList.toggle('active', n > 0);
+    btn.onclick = (e) => {
+      e.stopPropagation();
+      const menu = btn.parentElement && btn.parentElement.querySelector('.ta-filter-menu');
+      if (!menu) return;
+      menu.hidden = !menu.hidden;
+      btn.setAttribute('aria-expanded', String(!menu.hidden));
+    };
+  });
+  dash.draw('filter-menu-' + key, (menu) => {
+    menu.onclick = (e) => e.stopPropagation();
+    const spec = window.taFilterSpec[key];
+    menu.replaceChildren();
+    if (!spec) return;
+    const st = window.ta.filters[key] = window.ta.filters[key] || {};
+    spec.groups().forEach((g) => {
+      if (!g.options.length) return;
+      const fs = document.createElement('fieldset');
+      const lg = document.createElement('legend'); lg.textContent = g.label; fs.append(lg);
+      g.options.forEach((o) => {
+        const lab = document.createElement('label');
+        const cb = document.createElement('input'); cb.type = 'checkbox';
+        cb.id = `f-${key}-${g.id}-${String(o.value).replace(/\W/g, '_')}`;
+        cb.checked = (st[g.id] || []).includes(o.value);
+        cb.onchange = () => {
+          const cur = new Set(st[g.id] || []);
+          if (cb.checked) cur.add(o.value); else cur.delete(o.value);
+          st[g.id] = [...cur];
+          dash.draw(window.taFilterDraw[key]); dash.draw('filter-label-' + key);
+        };
+        const t = document.createElement('span'); t.textContent = o.label;
+        lab.append(cb, t);
+        if (o.count !== undefined) { const n = document.createElement('span'); n.className = 'n'; n.textContent = String(o.count); lab.append(n); }
+        fs.append(lab);
+      });
+      menu.append(fs);
+    });
+    const clear = document.createElement('button'); clear.type = 'button'; clear.className = 'clear'; clear.textContent = 'Clear all';
+    clear.onclick = () => { window.ta.filters[key] = {}; dash.draw('filter-menu-' + key); dash.draw('filter-label-' + key); dash.draw(window.taFilterDraw[key]); };
+    menu.append(clear);
+  });
+});
+document.addEventListener('click', () => {
+  document.querySelectorAll('.ta-filter-menu').forEach((m) => { m.hidden = true; });
+  document.querySelectorAll('.ta-filter-btn').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+});
+const taCount = (rows, fn) => rows.filter(fn).length;
+const taAges = () => { const a = dash.data('stage_age'); return new Map((a.status === 'ok' && Array.isArray(a.data) ? a.data : []).map((x) => [x.key, x])); };
+
+window.taFilterSpec.tickets = {
+  groups: () => {
+    const d = dash.data('tickets'); const rows = d.status === 'ok' ? d.data : []; const ages = taAges();
+    return [
+      { id: 'stage', label: 'Stage', mode: 'or', options: [['review', 'In review'], ['merged', 'Merged to main'], ['promoting', 'Promoting'], ['staging', 'On staging']]
+        .map(([v, l]) => ({ value: v, label: l, count: taCount(rows, (t) => t.stage === v) })) },
+      { id: 'flag', label: 'Only', mode: 'and', options: [{ value: 'stuck', label: 'Stuck', count: taCount(rows, (t) => (ages.get(t.key) || {}).over === 'yes') }] },
+    ];
+  },
+  test: (t, g, v) => g === 'stage' ? t.stage === v : g === 'flag' && v === 'stuck' ? (taAges().get(t.key) || {}).over === 'yes' : true,
+};
+
+const TA_NO_REPLY = ['Pass', 'Approve', 'Note'];
+window.taFilterSpec.comments = {
+  groups: () => {
+    const d = dash.data('comments'); const rows = d.status === 'ok' && Array.isArray(d.data) ? d.data : [];
+    const sev = [...new Set(rows.map((c) => c.severity))].sort((a, b) => (window.TA_RANK.severity[a] ?? 9) - (window.TA_RANK.severity[b] ?? 9));
+    const who = [...new Set(rows.map((c) => c.author))].sort((a, b) => a.localeCompare(b));
+    return [
+      { id: 'show', label: 'Only', mode: 'and', options: [
+        { value: 'reply', label: 'Needs my reply', count: taCount(rows, (c) => c.needsReply === 'yes') },
+        { value: 'findings', label: 'Findings, no review summaries', count: taCount(rows, (c) => c.kind !== 'bot' && !TA_NO_REPLY.includes(c.severity)) },
+        { value: 'nobots', label: 'Hide bots', count: taCount(rows, (c) => c.kind !== 'bot') }] },
+      { id: 'sev', label: 'Severity', mode: 'or', options: sev.map((v) => ({ value: v, label: v, count: taCount(rows, (c) => c.severity === v) })) },
+      { id: 'who', label: 'Reviewer', mode: 'or', options: who.map((v) => ({ value: v, label: v, count: taCount(rows, (c) => c.author === v) })) },
+    ];
+  },
+  test: (c, g, v) => g === 'show' ? (v === 'reply' ? c.needsReply === 'yes' : v === 'findings' ? c.kind !== 'bot' && !TA_NO_REPLY.includes(c.severity) : c.kind !== 'bot')
+    : g === 'sev' ? c.severity === v : g === 'who' ? c.author === v : true,
+};
+
+const TA_PROMO = window.TA_CFG.promoBranches;
+window.taFilterSpec.team = {
+  groups: () => {
+    const d = dash.data('team'); const rows = d.status === 'ok' ? d.data : [];
+    const dr = dash.data('drafts'); const ready = new Set((dr.status === 'ok' && Array.isArray(dr.data) ? dr.data : []).filter((x) => x.status === 'ready').map((x) => String(x.pr)));
+    const people = [...new Map(rows.map((r) => [r.author, r.name])).entries()].sort((a, b) => a[1].localeCompare(b[1]));
+    return [
+      { id: 'hide', label: 'Hide', mode: 'and', options: [
+        { value: 'draft', label: 'Draft PRs', count: taCount(rows, (r) => r.isDraft === 'yes') },
+        { value: 'promo', label: 'Promotion PRs', count: taCount(rows, (r) => TA_PROMO.includes(r.base)) },
+        { value: 'approved', label: 'Already approved', count: taCount(rows, (r) => r.decision === 'APPROVED') }] },
+      { id: 'mine', label: 'Only', mode: 'and', options: [
+        { value: 'replied', label: 'Replied to me', count: taCount(rows, (r) => r.repliesToMe > 0) },
+        { value: 'askme', label: 'Asks for my review', count: taCount(rows, (r) => r.requestedMe === 'yes') },
+        { value: 'unreviewed', label: 'Not reviewed by me', count: taCount(rows, (r) => !r.myReview) },
+        { value: 'drafted', label: 'Has a review draft', count: taCount(rows, (r) => ready.has(String(r.pr))) }] },
+      { id: 'status', label: 'Status', mode: 'or', options: [['REVIEW_REQUIRED', 'Needs review'], ['CHANGES_REQUESTED', 'Changes requested'], ['APPROVED', 'Approved']]
+        .map(([v, l]) => ({ value: v, label: l, count: taCount(rows, (r) => r.decision === v && r.isDraft === 'no') })) },
+      { id: 'author', label: 'Author', mode: 'or', options: people.map(([v, l]) => ({ value: v, label: l, count: taCount(rows, (r) => r.author === v) })) },
+    ];
+  },
+  test: (r, g, v) => {
+    if (g === 'hide') return v === 'draft' ? r.isDraft !== 'yes' : v === 'promo' ? !TA_PROMO.includes(r.base) : r.decision !== 'APPROVED';
+    if (g === 'mine') {
+      if (v === 'replied') return r.repliesToMe > 0;
+      if (v === 'askme') return r.requestedMe === 'yes';
+      if (v === 'unreviewed') return !r.myReview;
+      const dr = dash.data('drafts');
+      return (dr.status === 'ok' && Array.isArray(dr.data) ? dr.data : []).some((x) => String(x.pr) === String(r.pr) && x.status === 'ready');
+    }
+    if (g === 'status') return r.decision === v && r.isDraft === 'no';
+    if (g === 'author') return r.author === v;
+    return true;
+  },
+};
+
+dash.calc('stage_age', {
+  title: 'Days in current stage',
+  description: 'Whole days since each ticket entered its stage, against the stuck limits for review and promotion.',
+  inputs: ['tickets'],
+  fn: (tickets) => tickets.map((t) => {
+    const days = Math.floor((Date.now() - Date.parse(t.stageSince)) / 86400000);
+    const limit = window.TA_CFG.stuckDays[t.stage] ?? null;
+    return { key: t.key, days, limit, over: limit !== null && days >= limit ? 'yes' : 'no' };
+  }),
+});
+
+dash.calc('stats', {
+  title: 'Ticket and comment counts',
+  description: 'Tickets per stage and review findings still waiting on a reply.',
+  inputs: ['tickets', 'comments', 'stage_age'],
+  fn: (tickets, comments, ages) => [{
+    stuck: (ages || []).filter((a) => a.over === 'yes').length,
+    review: tickets.filter((t) => t.stage === 'review').length,
+    merged: tickets.filter((t) => t.stage === 'merged').length,
+    promoting: tickets.filter((t) => t.stage === 'promoting').length,
+    staging: tickets.filter((t) => t.stage === 'staging').length,
+    needsReply: comments.filter((c) => c.needsReply === 'yes').length,
+  }],
+});
+
+const statDraw = (field) => (el) => {
+  const s = dash.data('stats');
+  el.classList.toggle('dash-skeleton', s.status === 'loading');
+  el.textContent = s.status === 'ok' && s.data && s.data[0] ? String(s.data[0][field]) : '—';
+};
+[['lead-promoting', 'promoting'], ['lead-merged', 'merged'], ['lead-reply', 'needsReply'], ['lead-stuck', 'stuck'], ['m-stuck', 'stuck'],
+ ['m-review', 'review'], ['m-merged', 'merged'], ['m-promoting', 'promoting'], ['m-staging', 'staging'], ['m-reply', 'needsReply']]
+  .forEach(([name, field]) => dash.draw(name, statDraw(field)));
+</script>
+
+<script>
+const STAGES = {
+  closed: { n: 0, label: 'Closed', c: 'var(--ta-muted)' },
+  review: { n: 1, label: 'In review', c: 'var(--ta-yellow)' },
+  merged: { n: 2, label: 'Merged to main', c: 'var(--ta-cyan)' },
+  promoting: { n: 3, label: 'Promoting', c: 'var(--ta-pink)' },
+  staging: { n: 4, label: 'On staging', c: 'var(--ta-ok)' },
+};
+const fmtDay = d3.utcFormat('%b %d');
+
+window.taFmtDay = fmtDay;
+window.taPick = (t) => pickTicket(t);
+function pickTicket(t) {
+  window.ta.ticket = t.ticket;
+  window.ta.pr = String(t.pr);
+  dash.draw('ticket-rows'); dash.draw('ticket-input'); dash.draw('pr-input'); dash.draw('combo-cards');
+}
+
+dash.draw('ticket-rows', (tb) => {
+  const d = dash.data('tickets');
+  tb.replaceChildren();
+  if (d.status !== 'ok') {
+    const tr = tb.insertRow(); const td = tr.insertCell(); td.colSpan = 8; td.className = 'dim';
+    td.textContent = d.status === 'loading' ? 'Loading tickets…' : 'Failed to load';
+    return;
+  }
+  const ages = dash.data('stage_age');
+  const ageMap = new Map((ages.status === 'ok' && Array.isArray(ages.data) ? ages.data : []).map((a) => [a.key, a]));
+  if (!window.ta.ticket && d.data.length) { window.ta.ticket = d.data[0].ticket; window.ta.pr = String(d.data[0].pr); }
+  const v = window.ta.view;
+  const shown = d.data.filter((t) => window.taFilterPass('tickets', t));
+  const [tGet, tDir] = {
+    updated: [(t) => t.updated, -1],
+    days: [(t) => (ageMap.get(t.key) || {}).days ?? -1, -1],
+    stage: [(t) => window.TA_RANK.stage[t.stage] ?? 9, 1],
+    ticket: [(t) => Number(t.ticket), -1],
+    lines: [(t) => t.lines, -1],
+  }[v.tSort] || [(t) => t.updated, -1];
+  if (!shown.length) {
+    const td = tb.insertRow().insertCell(); td.colSpan = 8; td.className = 'dim';
+    td.textContent = 'No tickets match this view.';
+  }
+  window.taSortRows(shown, tGet, tDir).forEach((t) => {
+    const st = STAGES[t.stage] || STAGES.closed;
+    const tr = tb.insertRow(); tr.dataset.key = t.key;
+    tr.classList.toggle('is-picked', t.ticket === window.ta.ticket);
+    const k = tr.insertCell(); k.className = 'key'; k.textContent = t.key;
+    const ti = tr.insertCell(); ti.className = 'ttl';
+    const a = document.createElement('a'); a.href = t.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = t.title; ti.append(a);
+    if (t.reviewDecision === 'CHANGES_REQUESTED' && (t.stage === 'review' || t.stage === 'promoting')) { const dc = document.createElement('span'); dc.className = 'ta-dec'; dc.textContent = 'Changes requested'; ti.append(dc); }
+    const sc = tr.insertCell(); sc.style.setProperty('--sc', st.c);
+    const life = document.createElement('div'); life.className = 'ta-life'; life.setAttribute('role', 'img'); life.setAttribute('aria-label', `Stage ${st.n} of 4`);
+    for (let i = 1; i <= 4; i++) { const seg = document.createElement('i'); if (i <= st.n) seg.className = 'on'; seg.style.animationDelay = `${i * 70}ms`; life.append(seg); }
+    const lab = document.createElement('div'); lab.className = 'ta-stage'; lab.textContent = st.label + (t.stage === 'promoting' || t.stage === 'staging' ? ` · ${t.target}` : '');
+    sc.append(life, lab);
+    const ag = ageMap.get(t.key);
+    const ac = tr.insertCell(); ac.className = 'ta-age' + (ag && ag.over === 'yes' ? ' over' : ag && ag.limit !== null && ag.days >= ag.limit - 1 ? ' warn' : '');
+    ac.textContent = ag ? `${ag.days}d` + (ag.limit !== null ? ` / ${ag.limit}d` : '') : '—';
+    const p = tr.insertCell(); p.className = 'key'; p.textContent = `#${t.pr}`;
+    const l = tr.insertCell(); l.className = 'dim'; l.textContent = d3.format(',')(t.lines);
+    const u = tr.insertCell(); u.className = 'dim'; u.textContent = fmtDay(new Date(t.updated));
+    const b = tr.insertCell(); const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'ta-btn ghost'; btn.textContent = t.ticket === window.ta.ticket ? 'Loaded' : 'Load';
+    btn.setAttribute('aria-label', `Load ${t.key} into combo moves`);
+    btn.onclick = () => { pickTicket(t); const c = document.getElementById('combos'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    b.append(btn);
+  });
+});
+</script>
+
+<script>
+dash.draw('stuck-list', (ul) => {
+  const d = dash.data('tickets');
+  const ages = dash.data('stage_age');
+  ul.replaceChildren();
+  const note = (cls, msg) => { const li = document.createElement('li'); li.className = cls; li.textContent = msg; ul.append(li); };
+  if (d.status !== 'ok' || ages.status !== 'ok' || !Array.isArray(ages.data)) return note('ta-empty', d.status === 'loading' || ages.status === 'loading' ? 'Checking tickets…' : 'Failed to load');
+  const byKey = new Map(d.data.map((t) => [t.key, t]));
+  const over = ages.data.filter((a) => a.over === 'yes').sort((a, b) => b.days - a.days);
+  if (!over.length) return note('ta-clear', 'No stuck tickets. Everything in review or promotion is under its limit.');
+  over.forEach((a) => {
+    const t = byKey.get(a.key); if (!t) return;
+    const li = document.createElement('li'); li.className = 'ta-alert';
+    li.dataset.source = 'stage_age'; li.dataset.field = 'days'; li.dataset.where = 'key=' + encodeURIComponent(a.key);
+    const top = document.createElement('div'); top.className = 'ta-alert-top';
+    const k = document.createElement('span'); k.className = 'key'; k.textContent = `${t.key} · #${t.pr}`;
+    const dd = document.createElement('span'); dd.className = 'days'; dd.textContent = String(a.days);
+    const sm = document.createElement('small'); sm.textContent = a.days === 1 ? 'day' : 'days'; dd.append(sm);
+    top.append(k, dd);
+    const p = document.createElement('p'); p.textContent = t.title;
+    const why = document.createElement('div'); why.className = 'why';
+    why.textContent = t.stage === 'promoting'
+      ? `Promotion PR to ${t.target} open since ${window.taFmtDay(new Date(t.stageSince))}. Limit is ${a.limit} days.`
+      : `PR open in review since ${window.taFmtDay(new Date(t.stageSince))}` + (t.reviewDecision === 'CHANGES_REQUESTED' ? ', with changes requested' : '') + `. Limit is ${a.limit} days.`;
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const open = document.createElement('a'); open.className = 'ta-btn ghost'; open.href = t.url; open.target = '_blank'; open.rel = 'noopener'; open.textContent = 'Open PR'; open.style.textDecoration = 'none';
+    const load = document.createElement('button'); load.type = 'button'; load.className = 'ta-btn'; load.textContent = 'Load combo';
+    load.onclick = () => { window.taPick(t); const c = document.getElementById('combos'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    acts.append(open, load);
+    li.append(top, p, why, acts);
+    ul.append(li);
+  });
+});
+</script>
+
+<script>
+const taCmdRow = (cmd, label) => {
+  const row = document.createElement('div'); row.className = 'ta-cmd';
+  const code = document.createElement('code'); code.textContent = cmd;
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ta-btn ta-copy'; btn.textContent = 'Copy';
+  btn.setAttribute('aria-label', label);
+  btn.onclick = () => window.taCopy(btn, code);
+  row.append(code, btn);
+  return row;
+};
+
+window.TA_CTRL = window.TA_LOCAL ? '' : 'http://localhost:8765';
+window.TA_KEY = window.TA_CFG.key; // injected by control.py; never hardcode it
+const taAction = (label, path, cls, onDone) => {
+  const a = document.createElement('a');
+  a.className = 'ta-btn' + (cls ? ' ' + cls : ''); a.textContent = label;
+  a.href = `${window.TA_CTRL}/${path}${path.includes('?') ? '&' : '?'}t=${encodeURIComponent(window.TA_KEY)}`;
+  a.target = '_blank'; a.rel = 'noopener'; a.style.textDecoration = 'none';
+  if (onDone) a.addEventListener('click', onDone);
+  if (window.TA_LOCAL) {
+    a.removeAttribute('target');
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      fetch(a.href + '&fmt=json', { cache: 'no-store' }).then((r) => r.json())
+        .then((j) => { if (window.taToast) window.taToast(`${j.title}. ${j.msg}`, j.ok); if (window.taReload) window.taReload(); })
+        .catch(() => { if (window.taToast) window.taToast('The control server did not answer.', false); });
+    });
+  }
+  return a;
+};
+
+window.taAction = taAction;
+
+dash.draw('refresh-btn', (el) => {
+  el.replaceChildren();
+  const a = taAction(window.ta.refreshing ? 'Refreshing…' : 'Refresh now', 'refresh', window.ta.refreshing ? 'ghost' : '',
+    () => { window.ta.refreshing = true; dash.draw('refresh-btn'); setTimeout(() => { window.ta.refreshing = false; dash.draw('refresh-btn'); }, 90000); });
+  a.setAttribute('aria-label', 'Refresh the dashboard from GitHub now');
+  el.append(a);
+});
+
+dash.draw('follow-switch', (box) => {
+  const d = dash.data('tickets');
+  box.replaceChildren();
+  const rows = d.status === 'ok' ? d.data.filter((t) => t.followUp) : [];
+  const any = d.status === 'ok' ? d.data.find((t) => t.followEvery) : null;
+  const stored = rows.some((t) => t.followUp === 'on');
+  const pending = window.ta.pendingSwitch;
+  const on = pending ? pending === 'on' : stored;
+  const lamp = document.createElement('div'); lamp.className = 'ta-lamp' + (on ? ' on' : '');
+  lamp.textContent = d.status !== 'ok' ? '—' : on ? 'ON' : 'OFF';
+  const how = document.createElement('div'); how.className = 'how';
+  const p1 = document.createElement('p');
+  const every = any ? any.followEvery : 45;
+  p1.textContent = !rows.length ? 'No open PRs to follow up right now.'
+    : on ? `Posting every ${every} minutes for each PR below.` : 'Follow-ups are off.';
+  const acts = document.createElement('div'); acts.className = 'acts'; acts.style.display = 'flex'; acts.style.gap = '10px'; acts.style.flexWrap = 'wrap';
+  const redraw = (v) => () => { window.ta.pendingSwitch = v; dash.draw('follow-switch'); dash.draw('followups'); };
+  acts.append(on ? taAction('Stop follow-ups', 'stop', '', redraw('off')) : taAction('Start follow-ups', 'start', '', redraw('on')));
+  const p2 = document.createElement('p');
+  p2.textContent = (pending ? 'Sent. ' : '') + 'Buttons run on your PC through the Ticket Arena control server and open a small confirmation tab.';
+  how.append(p1, acts, p2);
+  box.append(lamp, how);
+});
+
+dash.draw('followups', (ul) => {
+  const d = dash.data('tickets');
+  ul.replaceChildren();
+  if (d.status !== 'ok') return;
+  const rows = d.data.filter((t) => t.followUp);
+  const when = d3.timeFormat('%b %d, %-I:%M %p');
+  const pending = window.ta.pendingSwitch;
+  rows.forEach((t) => {
+    const li = document.createElement('li');
+    li.dataset.source = 'tickets'; li.dataset.field = 'followUp'; li.dataset.where = 'key=' + encodeURIComponent(t.key);
+    const k = document.createElement('span'); k.className = 'key'; k.textContent = `#${t.pr}`;
+    const ti = document.createElement('span'); ti.className = 'ttl'; ti.textContent = `${t.key} · ${t.title}`;
+    const state = t.followUp === 'skipped' ? 'skipped' : (pending || t.followUp);
+    const pill = document.createElement('span'); pill.className = 'ta-pill ' + state;
+    pill.textContent = state === 'on' ? 'Following up' : state === 'skipped' ? 'Skipped' : 'Off';
+    const meta = document.createElement('span'); meta.className = 'meta';
+    const last = t.lastFollowUp ? new Date(t.lastFollowUp) : null;
+    const next = last ? new Date(last.getTime() + t.followEvery * 60000) : null;
+    meta.textContent = `Into ${t.target}` + (last ? ` · last posted ${when(last)}` : ' · not posted yet')
+      + (state === 'on' ? (next ? ` · next about ${when(next)}` : ' · posts at the next refresh') : '');
+    const acts = document.createElement('span'); acts.style.display = 'flex'; acts.style.gap = '8px'; acts.style.flexWrap = 'wrap'; acts.style.gridColumn = '2';
+    acts.append(taAction('Post now', `post?pr=${t.pr}`, 'ghost'),
+      t.followUp === 'skipped' ? taAction('Unskip', `unskip?pr=${t.pr}`, 'ghost') : taAction('Skip this PR', `skip?pr=${t.pr}`, 'ghost'));
+    li.append(k, ti, pill, meta, acts);
+    ul.append(li);
+  });
+});
+</script>
+
+<script>
+window.ta.skip = window.ta.skip || {};
+
+
+const DEC = { APPROVED: ['Approved', 'ok'], CHANGES_REQUESTED: ['Changes requested', 'bad'], REVIEW_REQUIRED: ['Needs review', 'muted'] };
+const draftMap = () => {
+  const d = dash.data('drafts');
+  return new Map((d.status === 'ok' && Array.isArray(d.data) ? d.data : []).map((x) => [String(x.pr), x]));
+};
+
+dash.draw('team-rows', (tb) => {
+  const d = dash.data('team');
+  tb.replaceChildren();
+  if (d.status !== 'ok') {
+    const td = tb.insertRow().insertCell(); td.colSpan = 7; td.className = 'dim';
+    td.textContent = d.status === 'loading' ? 'Loading team PRs…' : 'Failed to load';
+    return;
+  }
+  const drafts = draftMap();
+  const teamRank = (r) => (r.repliesToMe ? -20 : 0) + (r.requestedMe === 'yes' && !r.myReview ? 0 : 10) + (r.isDraft === 'yes' ? 5 : window.TA_RANK.decision[r.decision] ?? 3);
+  const keep = (r) => window.taFilterPass('team', r);
+  const [getT, dirT] = {
+    status: [teamRank, 1], newest: [(r) => r.opened, -1], oldest: [(r) => r.opened, 1],
+    author: [(r) => r.name, 1], lines: [(r) => r.lines, -1], updated: [(r) => r.updated, -1],
+  }[window.ta.view.teamSort] || [teamRank, 1];
+  const rows = window.taSortRows(d.data.filter(keep), getT, dirT);
+  if (!rows.length) {
+    const td = tb.insertRow().insertCell(); td.colSpan = 7; td.className = 'dim';
+    td.textContent = 'No PRs match these filters.';
+    return;
+  }
+  rows.forEach((r) => {
+    const tr = tb.insertRow(); tr.dataset.key = String(r.pr);
+    const c1 = tr.insertCell(); c1.className = 'key'; c1.textContent = `#${r.pr}`;
+    const c2 = tr.insertCell(); c2.className = 'who'; c2.textContent = r.name;
+    const c3 = tr.insertCell(); c3.className = 'ttl';
+    const a = document.createElement('a'); a.href = r.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = r.title; c3.append(a);
+    const c4 = tr.insertCell(); const pills = document.createElement('div'); pills.className = 'ta-pills';
+    const add = (txt, cls) => { const p = document.createElement('span'); p.className = 'ta-pill ' + cls; p.textContent = txt; pills.append(p); };
+    if (r.isDraft === 'yes') add('Draft PR', 'muted');
+    else { const dd = DEC[r.decision] || ['Open', 'muted']; add(dd[0], dd[1]); }
+    if (r.requestedMe === 'yes') add('Asks you', 'req');
+    if (r.myReview) add('You: ' + r.myReview.toLowerCase().replace('_', ' '), 'on');
+    if (r.repliesToMe) {
+      const a2 = document.createElement('a'); a2.className = 'ta-pill reply'; a2.href = r.replyUrl; a2.target = '_blank'; a2.rel = 'noopener';
+      a2.textContent = r.repliesToMe > 1 ? `${r.repliesToMe} replies to you` : `${r.replyBy} replied to you`;
+      a2.title = 'Open the reply on GitHub';
+      pills.append(a2);
+      tr.classList.add('is-replied');
+    }
+    c4.append(pills);
+    const c5 = tr.insertCell(); c5.className = 'dim';
+    const days = Math.floor((Date.now() - Date.parse(r.opened)) / 86400000);
+    c5.textContent = days < 1 ? 'today' : `${days}d`;
+    const c6 = tr.insertCell(); c6.className = 'dim'; c6.textContent = d3.format(',')(r.lines);
+    const c7 = tr.insertCell();
+    const dr = drafts.get(String(r.pr));
+    const st = dr ? dr.status : 'none';
+    if (st === 'drafting') { const s = document.createElement('span'); s.className = 'ta-pill req'; s.textContent = 'Drafting…'; c7.append(s); }
+    else if (st === 'ready') {
+      const go = document.createElement('a'); go.className = 'ta-btn'; go.href = '#draft-' + r.pr; go.textContent = 'View draft'; go.style.textDecoration = 'none';
+      go.onclick = (e) => { e.preventDefault(); const el = document.getElementById('draft-' + r.pr); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+      c7.append(go);
+    } else {
+      const b = window.taAction(st === 'posted' ? 'Draft again' : 'Draft review', `draft?pr=${r.pr}`, 'ghost',
+        () => { window.ta.drafting = Object.assign(window.ta.drafting || {}, { [r.pr]: true }); });
+      if ((window.ta.drafting || {})[r.pr]) b.textContent = 'Requested…';
+      c7.append(b);
+    }
+  });
+});
+
+dash.draw('draft-cards', (box) => {
+  const d = dash.data('drafts');
+  const t = dash.data('team');
+  box.replaceChildren();
+  const note = (msg) => { const p = document.createElement('div'); p.className = 'ta-empty'; p.textContent = msg; box.append(p); };
+  if (d.status !== 'ok') return note(d.status === 'loading' ? 'Loading drafts…' : 'Failed to load');
+  const ready = (Array.isArray(d.data) ? d.data : []).filter((x) => x.status === 'ready');
+  if (!ready.length) return note('No drafts waiting. Press Draft review on a PR above.');
+  const titles = new Map((t.status === 'ok' ? t.data : []).map((r) => [String(r.pr), r]));
+  ready.forEach((dr) => {
+    const info = titles.get(String(dr.pr));
+    const card = document.createElement('article'); card.className = 'ta-draft'; card.id = 'draft-' + dr.pr;
+    card.dataset.source = 'drafts'; card.dataset.field = 'summary'; card.dataset.where = 'pr=' + dr.pr;
+    const h = document.createElement('h3'); h.textContent = `#${dr.pr} · ${info ? info.name : ''}`;
+    const ttl = document.createElement('a'); ttl.className = 'ta-note'; ttl.href = info ? info.url : '#'; ttl.target = '_blank'; ttl.rel = 'noopener';
+    ttl.textContent = info ? info.title : 'PR no longer open'; ttl.style.color = 'var(--ta-cyan)';
+    const sum = document.createElement('p'); sum.className = 'sum'; sum.textContent = dr.summary || '(no summary)';
+    const skip = window.ta.skip[dr.pr] = window.ta.skip[dr.pr] || new Set();
+    const post = window.taAction('Post selected', `post-review?pr=${dr.pr}`, '');
+    const setHref = () => {
+      const base = post.href.split('&skip=')[0];
+      post.href = skip.size ? `${base}&skip=${[...skip].join(',')}` : base;
+      post.textContent = `Post ${dr.comments.length - skip.size} of ${dr.comments.length}`;
+    };
+    const ul = document.createElement('ul');
+    dr.comments.forEach((c) => {
+      const li = document.createElement('li'); li.className = skip.has(c.i) ? 'off' : '';
+      const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = !skip.has(c.i);
+      cb.id = `dc-${dr.pr}-${c.i}`; cb.setAttribute('aria-label', `Include comment on ${c.path} line ${c.line}`);
+      cb.onchange = () => { if (cb.checked) skip.delete(c.i); else skip.add(c.i); li.className = cb.checked ? '' : 'off'; setHref(); };
+      const loc = document.createElement('label'); loc.className = 'loc'; loc.htmlFor = cb.id; loc.textContent = `${c.path}:${c.line} · ${c.severity}`;
+      const body = document.createElement('div'); body.className = 'body'; body.textContent = c.body;
+      li.append(cb, loc, body); ul.append(li);
+    });
+    const acts = document.createElement('div'); acts.className = 'acts';
+    acts.append(post, window.taAction('Discard', `discard-draft?pr=${dr.pr}`, 'ghost'));
+    setHref();
+    card.append(h, ttl, sum, ul, acts);
+    box.append(card);
+  });
+});
+</script>
+
+<script>
+const SEV = {
+  Blocking: 'var(--ta-bad)', High: 'var(--ta-bad)', Changes: 'var(--ta-bad)',
+  Medium: 'var(--ta-pink)', Issue: 'var(--ta-pink)',
+  Low: 'var(--ta-yellow)', Nit: 'var(--ta-yellow)', Note: 'var(--ta-cyan)',
+  Pass: 'var(--ta-ok)', Approve: 'var(--ta-ok)',
+};
+const KIND = { human: 'Reviewer', agent: 'Review agent', bot: 'Bot' };
+const fmtWhen = d3.utcFormat('%b %d, %H:%M UTC');
+
+
+const taFilterCountC = () => Object.values(window.ta.filters.comments || {}).reduce((n, a) => n + a.length, 0);
+dash.draw('comment-feed', (ul) => {
+  const d = dash.data('comments');
+  ul.replaceChildren();
+  const empty = (msg) => { const li = document.createElement('li'); li.className = 'ta-empty'; li.textContent = msg; ul.append(li); };
+  if (d.status !== 'ok') return empty(d.status === 'loading' ? 'Loading comments…' : 'Failed to load');
+  const filtered = d.data.filter((c) => window.taFilterPass('comments', c));
+  const cs = window.ta.commentSort;
+  const rows = cs === 'oldest' ? window.taSortRows(filtered, (c) => c.at, 1)
+    : cs === 'severity' ? window.taSortRows(filtered, (c) => (window.TA_RANK.severity[c.severity] ?? 9) * 1e13 - Date.parse(c.at) / 1e3, 1)
+    : cs === 'reviewer' ? window.taSortRows(filtered, (c) => c.author, 1)
+    : cs === 'pr' ? window.taSortRows(filtered, (c) => -c.pr, 1)
+    : window.taSortRows(filtered, (c) => c.at, -1);
+  if (!rows.length) return empty(((window.ta.filters.comments || {}).show || []).includes('reply') && taFilterCountC() === 1
+    ? 'Clean sheet. Every finding has a reply.' : 'No comments match these filters on your open PRs.');
+  rows.forEach((c) => {
+    const li = document.createElement('li');
+    li.className = 'ta-card' + (c.needsReply === 'yes' ? ' reply' : '');
+    li.style.setProperty('--sv', SEV[c.severity] || 'var(--ta-cyan)');
+    li.dataset.source = 'comments'; li.dataset.field = 'body'; li.dataset.where = 'id=' + encodeURIComponent(c.id);
+    const top = document.createElement('div'); top.className = 'ta-card-top';
+    const tag = document.createElement('span'); tag.className = 'ta-tag'; tag.textContent = c.severity;
+    const who = document.createElement('span'); who.className = 'ta-who'; who.textContent = c.author;
+    const kind = document.createElement('span'); kind.textContent = `${KIND[c.kind] || ''} · ${c.ticket || ''} #${c.pr}`;
+    top.append(tag, who, kind);
+    const p = document.createElement('p'); p.textContent = c.body;
+    const foot = document.createElement('div'); foot.className = 'ta-card-foot';
+    const where = document.createElement('span'); where.textContent = (c.path ? `${c.path}${c.line ? ':' + c.line : ''} · ` : '') + fmtWhen(new Date(c.at));
+    const right = document.createElement('span');
+    if (c.needsReply === 'yes') { const fl = document.createElement('span'); fl.className = 'ta-flag'; fl.textContent = 'Reply needed · '; right.append(fl); }
+    const a = document.createElement('a'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open on GitHub';
+    right.append(a);
+    foot.append(where, right);
+    li.append(top, p, foot);
+    ul.append(li);
+  });
+});
+</script>
+
+<script>
+const onlyDigits = (v) => String(v || '').replace(/\D/g, '');
+
+dash.draw('ticket-input', (inp) => {
+  if (document.activeElement !== inp) inp.value = window.ta.ticket || '';
+  inp.oninput = () => { window.ta.ticket = onlyDigits(inp.value); dash.draw('combo-cards'); };
+});
+dash.draw('pr-input', (inp) => {
+  if (document.activeElement !== inp) inp.value = window.ta.pr || '';
+  inp.oninput = () => { window.ta.pr = onlyDigits(inp.value); dash.draw('combo-cards'); };
+});
+
+const COMBOS = [
+  { name: 'Start ticket', keys: 'Ticket', desc: 'Creates the ticket branch in its own worktree, plans, implements, tests, then asks before opening the PR.', cmd: (t) => `/start-ticket ${t}` },
+  { name: 'Resolve PR', keys: 'Ticket', desc: 'One pass: reads the ticket and PR, fixes in-scope review comments and failing checks, stops for your approval.', cmd: (t) => `/resolve-pr-ticket ${t}` },
+  { name: 'Auto-guard', keys: 'Ticket · every 30 min', desc: 'Keeps polling the PR and runs a resolve pass whenever new comments or failed checks land.', cmd: (t) => `/loop 30m /resolve-pr-ticket ${t}` },
+  { name: 'Self review', keys: 'PR', desc: 'Runs a high-effort code review on the PR before your reviewers do.', cmd: (t, p) => `/code-review high ${p}` },
+  { name: 'Watch checks', keys: 'PR', desc: 'Streams CI status in your terminal and exits when every check finishes.', cmd: (t, p) => `gh pr checks ${p} -R ${window.TA_CFG.repo} --watch` },
+  { name: 'Unresolved threads', keys: 'PR', desc: 'Lists open review threads on the PR so you can answer them in one sitting.', cmd: (t, p) => `gh pr view ${p} -R ${window.TA_CFG.repo} --comments` },
+];
+
+window.taCopy = (btn, code) => copyCmd(btn, code);
+function copyCmd(btn, code) {
+  const flash = () => { btn.classList.add('done'); setTimeout(() => btn.classList.remove('done'), 1200); };
+  const select = () => { const r = document.createRange(); r.selectNodeContents(code); const s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+  try {
+    navigator.clipboard.writeText(code.textContent).then(flash, select);
+  } catch (e) { select(); }
+}
+
+dash.draw('combo-cards', (box) => {
+  box.replaceChildren();
+  const t = window.ta.ticket || '<ticket>';
+  const p = window.ta.pr || '<pr>';
+  COMBOS.forEach((c) => {
+    const card = document.createElement('article'); card.className = 'ta-combo';
+    const h = document.createElement('h3'); h.textContent = c.name;
+    const k = document.createElement('div'); k.className = 'inputs'; k.textContent = c.keys;
+    const d = document.createElement('p'); d.textContent = c.desc;
+    const row = document.createElement('div'); row.className = 'ta-cmd';
+    const code = document.createElement('code'); code.textContent = c.cmd(t, p);
+    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ta-btn ta-copy'; btn.textContent = 'Copy';
+    btn.setAttribute('aria-label', `Copy ${c.name} command`);
+    btn.onclick = () => copyCmd(btn, code);
+    row.append(code, btn);
+    card.append(h, k, d, row);
+    box.append(card);
+  });
+});
+</script>

@@ -1,0 +1,15 @@
+services:
+  ticket-arena:
+    build: .
+    image: ticket-arena
+    container_name: ticket-arena
+    restart: unless-stopped
+    # only your own PC can reach it
+    ports:
+      - "127.0.0.1:8765:8765"
+    # files it writes stay owned by you, not root
+    user: "${TA_UID:-1000}:${TA_GID:-1000}"
+    environment:
+      GH_TOKEN: ${GH_TOKEN:-}
+    volumes:
+      - ./:/app

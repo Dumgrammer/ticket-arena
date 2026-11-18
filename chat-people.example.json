@@ -1,0 +1,6 @@
+{
+  "github-login": {
+    "name": "Name as shown in Google Chat",
+    "id": "Google Chat user id (digits) or empty for a plain @Name mention"
+  }
+}

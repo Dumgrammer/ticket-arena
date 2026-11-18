@@ -1,0 +1,11 @@
+{
+  "repo": "your-org/your-repo",
+  "ticketPrefix": "EDGE",
+  "promoBranches": ["staging", "stage", "demo"],
+  "stuckDays": {"review": 2, "promoting": 2},
+  "refreshMinutes": 15,
+  "chatSpaceName": "your-team-space",
+  "alwaysCc": ["your-lead"],
+  "firstMessage": "Good day team please review this pr thank you!",
+  "bumpMessage": "Good day team bumping this for re-approval thank you!"
+}

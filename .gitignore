@@ -1,0 +1,14 @@
+# personal settings and secrets: every user makes their own
+config.json
+gchat-webhook
+control-token
+chat-people.json
+chat-ids.json
+followups.json
+threads.json
+
+# generated data
+data/
+*.log
+__pycache__/
+*.pyc
