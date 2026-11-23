@@ -60,8 +60,6 @@ Use **Show** to filter and **Sort** to reorder. Click a row to load that ticket 
 
 "You'll see in the board hehehehe"
 
-![PR comments](docs/images/05-pr-comments.png)
-
 ### Round 4: Team PRs
 
 Open PRs from everyone in your team list (`chat-people.json`). Badges tell you where you're needed:
@@ -75,10 +73,6 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 
 
 **Review drafts (optional, uses Claude).** **Draft review** asks a Claude Code session to write review comments for a PR. You untick any you don't want, then press **Post** to send them to GitHub as one review from you, or **Discard**. Nothing is posted without your click. See [SETUP.md, Claude review drafts](SETUP.md#8-optional-claude-review-drafts).
-
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/07-review-draft.png`
-> Capture: a ready review draft card with its comment checkboxes and the Post / Discard buttons.
 
 "You'd also see on the board HAHAHAHA if you use it"
 
