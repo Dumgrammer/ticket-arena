@@ -2,11 +2,8 @@
 
 A personal dashboard for your tickets, PRs and Claude Code chats. It runs on your own PC and reads GitHub with your own `gh` login, so every developer sees their own work.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/01-overview.png`
-> Capture: the top of the dashboard (header and the six summary counters). Details in [docs/SCREENSHOTS.md](docs/SCREENSHOTS.md).
+<img width="2560" height="1600" alt="Overview" src="https://github.com/user-attachments/assets/cd74e8ec-73e0-4de3-a52e-7a7d4b559a0a" />
 
-![Ticket Arena overview](docs/images/01-overview.png)
 
 **Setting it up?** Go to **[SETUP.md](SETUP.md)**. It takes about 10 minutes.
 
