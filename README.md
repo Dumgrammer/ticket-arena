@@ -30,11 +30,8 @@ The header shows your repo and GitHub username, a one-line summary, and a **Refr
 
 A ticket is stuck when its PR has been open in review, or open for promotion to staging, longer than the limit (2 days by default). Each alert shows how many days it has been, since when, and whether changes were requested.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/02-stuck-tickets.png`
-> Capture: the Danger zone with at least one red stuck-ticket card.
+<img width="493" height="234" alt="image" src="https://github.com/user-attachments/assets/626c0407-074f-468b-b2d0-68e0f05fcd54" />
 
-![Stuck tickets](docs/images/02-stuck-tickets.png)
 
 ### Round 1: Ticket progress
 
@@ -45,27 +42,19 @@ One row per ticket, taken from your PR titles (`EDGE-123: ...`). Each row shows:
 
 Use **Show** to filter and **Sort** to reorder. Click a row to load that ticket into Combo moves.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/03-ticket-progress.png`
-> Capture: the Ticket progress table with tickets at different stages, plus the Show and Sort controls.
+<img width="2560" height="1600" alt="Tickets" src="https://github.com/user-attachments/assets/971857b4-bb2e-4fa5-9965-a98d31b23a75" />
 
-![Ticket progress](docs/images/03-ticket-progress.png)
 
 ### Round 2: PR comments and follow-ups
 
 **Follow-ups.** One switch turns on automatic "please review" posts to your Google Chat space. Each open PR gets a post on a timer. The post tags the people in your always-cc list and the PR's reviewers. A PR drops off as soon as it merges, and drafts and promotion PRs are left out. Each PR also has **Skip** / **Unskip**, **Post now**, and shows when it was last posted.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/04-follow-ups.png`
-> Capture: the Follow-ups switch (ON) and the list of PRs below it.
+<img width="1620" height="171" alt="image" src="https://github.com/user-attachments/assets/5bf6ed34-f2ab-4cb4-a27d-6d0e6cc46445" />
 
-![Follow-ups](docs/images/04-follow-ups.png)
 
 **Comments.** Review comments and review summaries on your open PRs. Each one is tagged with a severity (Blocking, High, Changes, Medium, Issue, Nit, Low, Note, Approve). Comments nobody has replied to are flagged **needs reply**. Bot comments are shortened to one line. You can filter by needs reply, severity or reviewer, and sort by newest, oldest, most severe, reviewer or PR.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/05-pr-comments.png`
-> Capture: a few comment cards, including at least one flagged "needs reply".
+"You'll see in the board hehehehe"
 
 ![PR comments](docs/images/05-pr-comments.png)
 
@@ -78,11 +67,8 @@ Open PRs from everyone in your team list (`chat-people.json`). Badges tell you w
 
 Filters include: hide drafts, promotions or approved PRs; only "replied to me", "asks for my review" or "not reviewed by me".
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/06-team-prs.png`
-> Capture: the Team PRs table with an "Asks you" badge and a pink "replied to you" badge visible.
+<img width="2560" height="1600" alt="Team PRs" src="https://github.com/user-attachments/assets/f04be337-a8bb-4346-b20f-8a17a92950f5" />
 
-![Team PRs](docs/images/06-team-prs.png)
 
 **Review drafts (optional, uses Claude).** **Draft review** asks a Claude Code session to write review comments for a PR. You untick any you don't want, then press **Post** to send them to GitHub as one review from you, or **Discard**. Nothing is posted without your click. See [SETUP.md, Claude review drafts](SETUP.md#8-optional-claude-review-drafts).
 
@@ -90,7 +76,7 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 > **SCREENSHOT TODO** `docs/images/07-review-draft.png`
 > Capture: a ready review draft card with its comment checkboxes and the Post / Discard buttons.
 
-![Review draft](docs/images/07-review-draft.png)
+"You'd also see on the board HAHAHAHA if you use it"
 
 ### Round 5: Worktrees and the context meter
 
@@ -98,11 +84,7 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 - **Remove worktree**: asks you to confirm first. It refuses if the worktree has uncommitted changes, and keeps the branch.
 - **One card per worktree**: branch, PR stage, uncommitted file count, and the Claude Code chats that worked on it.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/08-worktrees.png`
-> Capture: the Worktrees section: the Create worktree bar with "Host agent live", and two or three worktree cards.
-
-![Worktrees](docs/images/08-worktrees.png)
+<img width="2560" height="1600" alt="Worktree" src="https://github.com/user-attachments/assets/282fd850-1771-4453-a330-78f5673f0c74" />
 
 **Context meter.** Every Claude Code chat gets one:
 
@@ -119,7 +101,7 @@ The bar shows tokens used out of the context window. It has marks at both limits
 > **SCREENSHOT TODO** `docs/images/09-context-meter.png`
 > Capture: a close-up of one worktree card with a "Wrap up" or "Start a new chat" chat, so the meter, its marks and the verdict text are readable.
 
-![Context meter](docs/images/09-context-meter.png)
+<img width="2560" height="1600" alt="Worktree" src="https://github.com/user-attachments/assets/f1f11d03-2d29-48b8-9273-093e998b2210" />
 
 ### Round 3: Combo moves
 
@@ -136,13 +118,7 @@ Pick a ticket or PR, then copy a ready-made command:
 
 The slash commands need the matching Claude Code skills.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/10-combo-moves.png`
-> Capture: the Combo moves cards with a ticket and PR filled in.
-
-![Combo moves](docs/images/10-combo-moves.png)
-
----
+<img width="2560" height="1600" alt="Moves" src="https://github.com/user-attachments/assets/c5ed3571-9ade-4274-b672-cc2de3b40d30" />
 
 ## How it works
 
