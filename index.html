@@ -191,6 +191,38 @@
   @keyframes ta-charge { from { transform: skewX(-24deg) scaleX(0); } }
 }
 @media (max-width: 560px) { .ta-hero h1 { transform: none; } .ta-meter .num { font-size: 44px; } }
+
+/* worktrees + context calculator */
+.ta-wtbar { display: flex; gap: 12px 18px; align-items: center; flex-wrap: wrap; background: var(--ta-panel); border: 1px solid var(--ta-line); padding: 14px 16px; }
+.ta-wtbar .ta-input { width: 12ch; }
+.ta-host { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; display: inline-flex; gap: 8px; align-items: center; }
+.ta-host i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.ta-host.on { color: var(--ta-ok); } .ta-host.off { color: var(--ta-bad); }
+.ta-jobs { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ta-jobs li { background: var(--ta-panel); border: 1px solid var(--ta-line); border-left: 4px solid var(--jc); padding: 10px 14px; display: grid; gap: 4px; min-width: 0; }
+.ta-jobs pre { margin: 0; font: 500 12px var(--ta-mono); color: var(--ta-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+.ta-ctxkey { display: flex; gap: 8px 16px; flex-wrap: wrap; font-size: 13px; color: var(--ta-muted); align-items: center; }
+.ta-ctxkey b { font-weight: 700; } .ta-ctxkey .ok { color: var(--ta-ok); } .ta-ctxkey .wrap { color: var(--ta-yellow); } .ta-ctxkey .new { color: var(--ta-bad); }
+.ta-wts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.ta-wt { background: var(--ta-panel); border: 1px solid var(--ta-line); border-top: 3px solid var(--wc, var(--ta-line)); padding: 14px 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.ta-wt-top { display: flex; justify-content: space-between; gap: 8px 12px; align-items: start; flex-wrap: wrap; }
+.ta-wt h3 { margin: 0; font-family: var(--ta-display); font-weight: 400; font-size: 24px; text-transform: uppercase; letter-spacing: .02em; overflow-wrap: anywhere; }
+.ta-wt .path { font: 500 12px var(--ta-mono); color: var(--ta-muted); overflow-wrap: anywhere; }
+.ta-sess { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ta-sess li { background: var(--ta-bg); border: 1px solid var(--ta-line); padding: 10px 12px; display: grid; gap: 7px; min-width: 0; }
+.ta-sess .row1 { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.ta-sess .nm { font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
+.ta-sess .nm .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ta-ok); box-shadow: 0 0 8px var(--ta-ok); margin-right: 6px; vertical-align: middle; }
+.ta-sess .tok { font: 500 12px var(--ta-mono); color: var(--ta-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ta-gauge { position: relative; height: 10px; background: var(--ta-panel-2); overflow: visible; }
+.ta-gauge .fill { position: absolute; inset: 0 auto 0 0; background: var(--gc); box-shadow: 0 0 10px var(--gc); }
+.ta-gauge .mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--mc); }
+.ta-gauge .mark.cmp { background: transparent; border-left: 2px dotted var(--ta-muted); }
+.ta-verdict { font-size: 13px; margin: 0; overflow-wrap: anywhere; }
+.ta-verdict b { color: var(--gc); letter-spacing: .08em; text-transform: uppercase; font-size: 12px; margin-right: 6px; }
+.ta-sess .meta { font-size: 12px; color: var(--ta-muted); }
+.ta-sess .ta-cmd code { font-size: 12px; padding: 7px 9px; }
+.ta-wt-more { justify-self: start; }
 </style>
 
 <div class="ta">
@@ -267,6 +299,17 @@
       <h3 class="ta-sub">Review drafts</h3>
       <p class="ta-note">Untick any comment you don't want, then press Post. The rest are posted to GitHub as one review from you.</p>
       <div class="ta-drafts" data-draw="draft-cards" data-source="drafts"></div>
+    </section>
+
+    <section class="ta-sec" id="worktrees">
+      <div class="ta-head">
+        <h2><span class="ta-round">Round 5</span> Worktrees</h2>
+        <div class="ta-controls"><label class="ta-sortsel"><input type="checkbox" id="ta-wt-all"> Show all worktrees</label></div>
+      </div>
+      <p class="ta-note">Your git worktrees and the Claude Code chats working in each one. The meter shows how full each chat's context is, so you can tell whether to keep going or start a fresh chat. A chat counts toward a worktree when it ran in that folder, or when its title names the ticket or one of its PRs. Needs the host agent running (python3 ta-host.py).</p>
+      <div class="ta-wtbar" data-draw="wt-new"></div>
+      <div class="ta-ctxkey" data-draw="wt-key"></div>
+      <div class="ta-wts" data-draw="wt-list" data-source="worktrees"></div>
     </section>
 
     <section class="ta-sec" id="combos">
@@ -648,6 +691,7 @@ const taAction = (label, path, cls, onDone) => {
 };
 
 window.taAction = taAction;
+window.taCmdRow = taCmdRow;
 
 dash.draw('refresh-btn', (el) => {
   el.replaceChildren();
@@ -924,4 +968,151 @@ dash.draw('combo-cards', (box) => {
     box.append(card);
   });
 });
+</script>
+
+<script>
+// ---- Round 5: worktrees + context calculator ----------------------------------
+const taK = (n) => n >= 1e6 ? (n / 1e6).toFixed(n % 1e6 ? 2 : 0).replace(/\.?0+$/, '') + 'M' : n >= 1000 ? Math.round(n / 1000) + 'K' : String(n);
+const taAgo = (iso) => {
+  if (!iso) return '';
+  const m = Math.round((Date.now() - Date.parse(iso)) / 60000);
+  return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} d ago`;
+};
+const taWt = () => { const d = dash.data('worktrees'); return d.status === 'ok' && d.data && !Array.isArray(d.data) ? d.data : null; };
+const TA_CTX = { ok: ['Keep going', 'var(--ta-ok)'], wrap: ['Wrap up', 'var(--ta-yellow)'], new: ['Start a new chat', 'var(--ta-bad)'], compacted: ['Just compacted', 'var(--ta-cyan)'] };
+window.ta.wtAll = window.ta.wtAll || false;
+document.querySelectorAll('#ta-wt-all').forEach((el) => { el.checked = window.ta.wtAll; el.onchange = () => { window.ta.wtAll = el.checked; dash.draw('wt-list'); }; });
+
+const taVerdict = (s, w) => {
+  if (s.status === 'compacted') return 'The chat was just compacted, so earlier details are now a summary. The new size shows after its next reply. For a new task, a fresh chat is cleaner.';
+  if (s.status === 'new') return `Over ${taK(w.stop)}. Answers get slower and less precise from here, and auto-compaction can drop details. Ask it for a handoff summary, then start a new chat.`;
+  const left = s.promptsLeft != null ? ` About ${s.promptsLeft} more prompt${s.promptsLeft === 1 ? '' : 's'} at your usual ${taK(s.growth)} per prompt.` : '';
+  if (s.status === 'wrap') return `Past ${taK(w.warn)}. Finish the current step here, but take the next task to a new chat.${left}`;
+  return `${taK(s.tokensLeft)} of room before ${taK(w.stop)}.${left}` + (s.compactions ? ` Compacted ${s.compactions}x already, so older context is summarized.` : '');
+};
+
+dash.draw('wt-new', (bar) => {
+  const w = taWt();
+  if (!bar.dataset.built) {             // build the input once so the 10-second poll never wipes your typing
+    bar.dataset.built = '1';
+    const lab = document.createElement('label'); lab.className = 'ta-sortsel'; lab.htmlFor = 'ta-wt-ticket'; lab.textContent = 'Ticket';
+    const inp = document.createElement('input'); inp.className = 'ta-input'; inp.id = 'ta-wt-ticket'; inp.placeholder = '1234';
+    inp.value = window.ta.wtTicket || window.ta.ticket || '';
+    const btnBox = document.createElement('span'); btnBox.className = 'wt-btn';
+    const host = document.createElement('span'); host.className = 'ta-host off';
+    const cmd = document.createElement('span'); cmd.className = 'ta-note wt-cmd';
+    const mk = () => {
+      btnBox.replaceChildren();
+      const t = (inp.value || '').trim().toUpperCase().replace(/[^A-Z0-9-]/g, '');
+      const a = window.taAction('Create worktree', `wt-new?ticket=${encodeURIComponent(t)}`, t ? '' : 'ghost',
+        () => setTimeout(() => window.taReloadWorktrees && window.taReloadWorktrees(), 1500));
+      if (!t) { a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.addEventListener('click', (e) => { e.preventDefault(); e.stopImmediatePropagation(); inp.focus(); }, true); }
+      btnBox.append(a);
+    };
+    inp.oninput = () => { window.ta.wtTicket = inp.value; mk(); };
+    mk();
+    bar.append(lab, inp, btnBox, host, cmd);
+  }
+  const host = bar.querySelector('.ta-host');
+  const alive = w && Date.now() - Date.parse(w.at) < 120000;
+  host.className = 'ta-host ' + (alive ? 'on' : 'off');
+  host.replaceChildren(document.createElement('i'), alive ? `Host agent live · ${taAgo(w.at)}` : 'Host agent not running');
+  bar.querySelector('.wt-cmd').textContent = w ? `Runs: ${w.newCommand}` : '';
+});
+
+dash.draw('wt-key', (box) => {
+  box.replaceChildren();
+  const w = taWt(); if (!w) return;
+  box.innerHTML = `<span><b class="ok">Keep going</b> under ${taK(w.warn)}</span><span><b class="wrap">Wrap up</b> ${taK(w.warn)} to ${taK(w.stop)}</span><span><b class="new">New chat</b> over ${taK(w.stop)}</span>`;
+  const c = w.compactedAt;
+  const s = document.createElement('span');
+  s.textContent = (c && c.count ? `Your chats auto-compacted at ${taK(c.min)} to ${taK(c.median)} (median), out of a ${taK(w.window)} window.` : `Context window ${taK(w.window)}.`) + ' Limits are in config.json.';
+  box.append(s);
+});
+
+dash.draw('wt-list', (box) => {
+  box.replaceChildren();
+  const note = (m) => { const p = document.createElement('div'); p.className = 'ta-empty'; p.textContent = m; box.append(p); };
+  const d = dash.data('worktrees');
+  if (d.status === 'loading') return note('Loading worktrees…');
+  const w = taWt();
+  if (!w || !w.worktrees) return note('No worktree data yet. Start the host agent on your PC: python3 ta-host.py');
+  const tk = dash.data('tickets'); const tmap = new Map((tk.status === 'ok' ? tk.data : []).map((t) => [String(t.ticket), t]));
+  const jobs = (w.jobs || []).slice().reverse();
+  if (jobs.length) {
+    const ul = document.createElement('ul'); ul.className = 'ta-jobs'; ul.style.gridColumn = '1 / -1';
+    jobs.slice(0, 3).forEach((j) => {
+      const li = document.createElement('li');
+      li.style.setProperty('--jc', j.status === 'running' ? 'var(--ta-yellow)' : j.status === 'done' ? 'var(--ta-ok)' : 'var(--ta-bad)');
+      const top = document.createElement('div'); top.className = 'ta-card-top';
+      top.textContent = `${j.action === 'new' ? 'Create' : 'Remove'} worktree ${j.ticket} · ${j.status === 'running' ? 'running…' : j.status} · ${taAgo(j.endedAt || j.startedAt)}`;
+      const pre = document.createElement('pre'); pre.textContent = (j.tail || []).slice(-3).join('\n');
+      li.append(top, pre); ul.append(li);
+    });
+    box.append(ul);
+  }
+  const lastAct = (r) => r.sessions.length ? r.sessions[0].lastAt : '';
+  let rows = w.worktrees.filter((r) => window.ta.wtAll ? true : !r.agent && (r.sessions.length || r.dirty || r.isMain));
+  rows = rows.slice().sort((a, b) => (b.sessions.some((s) => s.live) - a.sessions.some((s) => s.live)) || lastAct(b).localeCompare(lastAct(a)) || (a.isMain - b.isMain));
+  const hidden = w.worktrees.length - rows.length;
+  rows.forEach((r) => {
+    const worst = r.sessions.length ? ['new', 'wrap', 'compacted', 'ok'].find((st) => r.sessions.some((s) => s.status === st && (s.live || r.sessions[0] === s))) : null;
+    const card = document.createElement('article'); card.className = 'ta-wt';
+    card.style.setProperty('--wc', worst ? TA_CTX[worst][1] : 'var(--ta-line)');
+    card.dataset.source = 'worktrees'; card.dataset.field = 'sessions'; card.dataset.where = 'path=' + encodeURIComponent(r.path);
+    const top = document.createElement('div'); top.className = 'ta-wt-top';
+    const left = document.createElement('div'); left.style.minWidth = '0';
+    const h = document.createElement('h3'); h.textContent = r.isMain ? 'Main checkout' : (r.ticket ? `${window.TA_CFG.ticketPrefix}-${r.ticket}` : r.name);
+    const path = document.createElement('div'); path.className = 'path'; path.textContent = `${r.path} · ${r.branch}`;
+    left.append(h, path);
+    const pills = document.createElement('div'); pills.className = 'ta-pills';
+    const pill = (t, c) => { const x = document.createElement('span'); x.className = 'ta-pill ' + c; x.textContent = t; pills.append(x); };
+    const t = tmap.get(r.ticket);
+    if (t && !r.isMain) pill(t.stage === 'review' ? 'In review' : t.stage, t.stage === 'review' ? 'req' : 'on');
+    if (r.dirty) pill(`${r.dirty} uncommitted`, 'skipped');
+    if (!r.exists) pill('folder gone', 'bad');
+    top.append(left, pills);
+    card.append(top);
+    if (r.isMain && r.sessions.length) { const p = document.createElement('p'); p.className = 'ta-note'; p.textContent = 'Chats from the main folder that name no worktree ticket (reviews of other PRs, questions).'; card.append(p); }
+    const ul = document.createElement('ul'); ul.className = 'ta-sess';
+    const show = r.isMain ? r.sessions.slice(0, 3) : r.sessions.slice(0, 4);
+    show.forEach((s) => {
+      const li = document.createElement('li'); const [lbl, col] = TA_CTX[s.status]; li.style.setProperty('--gc', col);
+      const r1 = document.createElement('div'); r1.className = 'row1';
+      const nm = document.createElement('span'); nm.className = 'nm';
+      if (s.live) { const dot = document.createElement('span'); dot.className = 'dot'; dot.title = 'Active in the last 10 minutes'; nm.append(dot); }
+      nm.append(s.title);
+      const tok = document.createElement('span'); tok.className = 'tok'; tok.textContent = s.status === 'compacted' ? 'compacted' : `${taK(s.used)} / ${taK(w.window)} · ${s.pct}%`;
+      r1.append(nm, tok);
+      const g = document.createElement('div'); g.className = 'ta-gauge'; g.setAttribute('role', 'meter');
+      g.setAttribute('aria-valuemin', '0'); g.setAttribute('aria-valuemax', String(w.window)); g.setAttribute('aria-valuenow', String(s.used));
+      g.setAttribute('aria-label', `Context used: ${taK(s.used)} of ${taK(w.window)}`);
+      const fill = document.createElement('div'); fill.className = 'fill'; fill.style.width = Math.min(100, s.pct) + '%';
+      const mark = (v, c, cls) => { const m = document.createElement('div'); m.className = 'mark' + (cls ? ' ' + cls : ''); m.style.left = (100 * v / w.window) + '%'; m.style.setProperty('--mc', c); return m; };
+      g.append(fill, mark(w.warn, 'var(--ta-yellow)'), mark(w.stop, 'var(--ta-bad)'));
+      if (w.compactedAt && w.compactedAt.median) g.append(mark(w.compactedAt.median, '', 'cmp'));
+      const v = document.createElement('p'); v.className = 'ta-verdict';
+      const b = document.createElement('b'); b.textContent = lbl; v.append(b, taVerdict(s, w));
+      const meta = document.createElement('div'); meta.className = 'meta';
+      meta.textContent = `${s.prompts} prompt${s.prompts === 1 ? '' : 's'} · last active ${taAgo(s.lastAt)}` + (s.cwd && s.cwd !== r.path ? ` · ran in ${s.cwd.split('/').slice(-1)[0]}` : '');
+      li.append(r1, g, v, meta, window.taCmdRow(s.resume, `Copy the command to resume ${s.title}`));
+      ul.append(li);
+    });
+    if (show.length) card.append(ul);
+    else { const p = document.createElement('p'); p.className = 'ta-note'; p.textContent = `No Claude chats here in the last few days.`; card.append(p); }
+    if (r.sessions.length > show.length) { const p = document.createElement('p'); p.className = 'ta-note'; p.textContent = `+${r.sessions.length - show.length} older chat(s)`; card.append(p); }
+    if (!r.isMain && !r.agent && r.exists && r.ticket) {
+      const acts = document.createElement('div'); acts.className = 'ta-pills';
+      const rm = window.taAction('Remove worktree', `wt-rm?ticket=${encodeURIComponent(r.ticket)}`, 'ghost',
+        () => setTimeout(() => window.taReloadWorktrees && window.taReloadWorktrees(), 1500));
+      rm.addEventListener('click', (e) => { if (!confirm(`Remove ${r.path}? The branch is kept, and it refuses if there are uncommitted changes.`)) { e.preventDefault(); e.stopImmediatePropagation(); } }, true);
+      if (r.dirty) { rm.title = 'Has uncommitted changes: commit or stash first'; }
+      acts.append(rm); card.append(acts);
+    }
+    box.append(card);
+  });
+  if (!rows.length) note('No worktrees with recent chats. Tick Show all worktrees to see every one.');
+  if (hidden && !window.ta.wtAll) { const p = document.createElement('p'); p.className = 'ta-note'; p.style.gridColumn = '1 / -1'; p.textContent = `${hidden} idle or agent worktree(s) hidden.`; box.append(p); }
+});
+dash.onData && dash.onData(() => { dash.draw('wt-new'); dash.draw('wt-key'); });
 </script>

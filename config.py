@@ -21,6 +21,19 @@ DEFAULTS = {
     "alwaysCc": [],
     "firstMessage": "Good day team please review this pr thank you!",
     "bumpMessage": "Good day team bumping this for re-approval thank you!",
+    # worktrees + context calculator (ta-host.py, runs on your PC)
+    "worktreeMain": "~/projects/your-repo",
+    "worktreeNewCommand": "git worktree add ../worktree-{num} -b {prefix}/{num} origin/main",
+    "worktreeRemoveCommand": "git worktree remove ../worktree-{num}",
+    "claudeProjectsDir": "~/.claude/projects",
+    "sessionDays": 7,
+    "contextWindow": 1000000,
+    "contextWarnTokens": 200000,
+    "contextStopTokens": 350000,
+    "hostIntervalSeconds": 15,
+    # Claude features that spend tokens: both off unless you turn them on
+    "autoDraft": False,       # queue a Claude review draft for PRs that request your review
+    "notifyClaude": False,    # write REFRESH lines so a watching Claude session re-uploads to claude.ai
 }
 
 

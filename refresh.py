@@ -59,6 +59,10 @@ for base in PROMO:
     promos += [dict(p, base=base) for p in gh("pr", "list", "-R", REPO, "--base", base, "--state", "all", "--limit", "100",
                                               "--json", "number,title,url,state,createdAt,mergedAt,author")]
 
+# PR number -> ticket number, so the worktree panel can place sessions titled "PR 5678"
+(OUT / "prmap.json").write_text(json.dumps({str(p["number"]): m.group(1) for p in prs
+                                            if (m := re.match(rf"{re.escape(config.get('ticketPrefix'))}-(\d+)", p["title"]))}))
+
 # ---- tickets -------------------------------------------------------------
 tickets = {}
 my_numbers = {p["number"] for p in prs}
@@ -249,7 +253,7 @@ _drafts_file = Path(__file__).resolve().parent / "data" / "drafts.json"
 _drafts = {str(d["pr"]): d for d in (json.loads(_drafts_file.read_text()) if _drafts_file.exists() else [])}
 _state_file = Path(__file__).resolve().parent / "data" / "state.json"
 _auto = (json.loads(_state_file.read_text()) if _state_file.exists() else {}).get("autoDrafted", {})
-for r in team:
+for r in (team if config.get("autoDraft") else []):  # off by default: drafting spends Claude tokens
     if r["requestedMe"] == "yes" and r["isDraft"] == "no" and not r["myReview"] \
             and _auto.get(str(r["pr"])) != r["headSha"] and _drafts.get(str(r["pr"]), {}).get("status") not in ("drafting", "ready"):
         print(f"AUTO_DRAFT {r['pr']}")

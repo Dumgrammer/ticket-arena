@@ -1,7 +1,7 @@
 // Ticket Arena, local mode: a small stand-in for the claude.ai dashboard runtime (`dash`),
 // so the same index.html runs from the control server at http://localhost:8765.
 (function () {
-  const SOURCES = { tickets: '/data/tickets.json', comments: '/data/comments.json', team: '/data/team.json', drafts: '/data/drafts.json' };
+  const SOURCES = { tickets: '/data/tickets.json', comments: '/data/comments.json', team: '/data/team.json', drafts: '/data/drafts.json', worktrees: '/data/worktrees.json' };
   const store = {};
   const calcs = [];
   const draws = {};
@@ -61,6 +61,16 @@
     colors: [],
   };
   window.taReload = load;
+  // the worktree panel changes often (host agent writes every few seconds): poll just that file
+  async function loadWorktrees() {
+    try {
+      const r = await fetch(SOURCES.worktrees, { cache: 'no-store' });
+      if (!r.ok) throw new Error(r.status);
+      store.worktrees = { status: 'ok', data: await r.json() };
+    } catch (e) { if (!store.worktrees || store.worktrees.status !== 'ok') store.worktrees = { status: 'error', data: [] }; }
+    ['wt-new', 'wt-list'].forEach(runDraw);
+  }
+  window.taReloadWorktrees = loadWorktrees;
 
   window.taToast = (msg, ok) => {
     let t = document.getElementById('ta-toast');
@@ -81,5 +91,6 @@
     drawAll();
     load();
     setInterval(load, 60000); // pick up the server's 15-minute refreshes without reloading the page
+    setInterval(loadWorktrees, 10000);
   });
 })();

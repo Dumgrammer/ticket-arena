@@ -56,7 +56,7 @@ def run_refresh():
     if r.returncode != 0:
         raise RuntimeError((r.stderr or "unknown error").strip()[-300:])
     out = (r.stdout or "").strip().splitlines()
-    if out and out[-1].startswith("CHANGED"):
+    if config.get("notifyClaude") and out and out[-1].startswith("CHANGED"):
         # tells the Claude session (if open) to upload to the claude.ai copy too
         with open(HERE / "requests.log", "a") as f:
             f.write(f"REFRESH {datetime.now().isoformat(timespec='seconds')} {' '.join(out)}\n")
@@ -142,7 +142,7 @@ class H(BaseHTTPRequestHandler):
             return self.send_raw(200, "text/html; charset=utf-8", local_page().encode())
         if u.path == "/ta-local.js":
             return self.send_raw(200, "text/javascript; charset=utf-8", (HERE / "ta-local.js").read_bytes())
-        if u.path in ("/data/tickets.json", "/data/comments.json", "/data/team.json", "/data/drafts.json"):
+        if u.path in ("/data/tickets.json", "/data/comments.json", "/data/team.json", "/data/drafts.json", "/data/worktrees.json"):
             f = HERE / u.path.lstrip("/")
             return self.send_raw(200, "application/json", f.read_bytes() if f.exists() else b"[]")
         if not secrets.compare_digest(q.get("t", ""), TOKEN):
@@ -206,6 +206,19 @@ class H(BaseHTTPRequestHandler):
         if action == "discard-draft" and pr.isdigit():
             drafts.set_status(pr, "discarded")
             return self.reply(200, f"Draft for #{pr} discarded", "Nothing was posted.", "#a8a1c9")
+        if action in ("wt-new", "wt-rm"):
+            t = q.get("ticket", "").strip().upper()
+            if not re.fullmatch(r"(?:[A-Z]+-)?\d{2,7}", t):
+                return self.reply(400, "Not queued", "Give a ticket like 1234 or PROJ-1234.", "#ff5a4e")
+            with open(HERE / "requests.log", "a") as f:
+                f.write(f"{'WT_NEW' if action == 'wt-new' else 'WT_RM'} {t}\n")
+            host = HERE / "data" / "worktrees.json"
+            alive = host.exists() and time.time() - host.stat().st_mtime < 120
+            msg = ("The host agent is creating it now; progress shows in the Worktrees section." if action == "wt-new"
+                   else "The host agent is removing it (refused if it has uncommitted changes; the branch is kept).")
+            if not alive:
+                msg = "Queued, but the host agent isn't running: start it with python3 ta-host.py (see SETUP.md)."
+            return self.reply(200 if alive else 503, f"Worktree {t}", msg, "#ffe03d" if alive else "#ff5a4e")
         if action == "status":
             return self.reply(200, "Status", "Current follow-up settings:", "#33dcff")
         return self.reply(404, "Unknown button", f"No action called '{action}'.", "#ff5a4e")
