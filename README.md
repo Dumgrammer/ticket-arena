@@ -16,6 +16,7 @@ A personal dashboard for your tickets, PRs and Claude Code chats. It runs on you
 - **Stop chasing reviewers by hand**: it posts "please review" reminders to Google Chat on a timer and stops when the PR merges.
 - **Know when a Claude chat is too full**: every Claude Code chat gets a context meter that says keep going, wrap up, or start a new chat.
 - **Create and remove worktrees with one click.**
+- **Run commands without copy-paste**: Run buttons open a terminal tab in the right worktree with the command already running.
 - **Costs no Claude tokens.** It only uses `gh`, `git`, a Chat webhook and local files.
 
 ---
@@ -81,6 +82,7 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 - **Create worktree**: type a ticket and press the button. It runs your worktree command (plain `git worktree add`, or your own script), and its progress shows live on the page.
 - **Remove worktree**: asks you to confirm first. It refuses if the worktree has uncommitted changes, and keeps the branch.
 - **One card per worktree**: branch, PR stage, uncommitted file count, and the Claude Code chats that worked on it.
+- **New Claude chat** and **Terminal** on each card open a terminal tab in that worktree, with or without Claude started.
 
 <img width="2560" height="1600" alt="Worktree" src="https://github.com/user-attachments/assets/282fd850-1771-4453-a330-78f5673f0c74" />
 
@@ -93,13 +95,13 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 | **Start a new chat** | over 350K | Ask Claude for a handoff summary, then start a new chat. |
 | **Just compacted** | right after an auto-compact | Earlier details are now a summary. For new work, a fresh chat is cleaner. |
 
-The bar shows tokens used out of the context window. It has marks at both limits, plus a dotted line where your own chats usually auto-compact. Each chat also shows its prompt count and number of compactions, a green dot if it was active in the last 10 minutes, and a copy button for `claude --resume`. You can change the limits in `config.json`.
+The bar shows tokens used out of the context window. It has marks at both limits, plus a dotted line where your own chats usually auto-compact. Each chat also shows its prompt count and number of compactions, a green dot if it was active in the last 10 minutes, and its `claude --resume` command with **Run** (reopens the chat in a terminal tab in the right folder) and **Copy**. You can change the limits in `config.json`.
 
 <img width="2560" height="1600" alt="Worktree" src="https://github.com/user-attachments/assets/f1f11d03-2d29-48b8-9273-093e998b2210" />
 
 ### Round 3: Combo moves
 
-Pick a ticket or PR, then copy a ready-made command:
+Pick a ticket or PR, then press **Run** to open a terminal tab in that ticket's worktree (or your main checkout) with the command already running. **Copy** is still there if you'd rather paste it.
 
 | Move | Command |
 |---|---|
@@ -110,7 +112,7 @@ Pick a ticket or PR, then copy a ready-made command:
 | Watch checks | `gh pr checks <pr> --watch` |
 | Unresolved threads | `gh pr view <pr> --comments` |
 
-The slash commands need the matching Claude Code skills.
+The slash commands need the matching Claude Code skills. They start Claude Code, so they use tokens just as if you typed them.
 
 <img width="2560" height="1600" alt="Moves" src="https://github.com/user-attachments/assets/c5ed3571-9ade-4274-b672-cc2de3b40d30" />
 
@@ -141,7 +143,7 @@ flowchart LR
 | `control.py` | Local web server on `127.0.0.1:8765`. It serves the dashboard, runs the GitHub refresh on a timer, and handles button clicks (each needs a secret key) |
 | `refresh.py` | Pulls your PRs, comments and team PRs with `gh`, then writes `data/*.json` |
 | `followup.py` | Posts follow-ups to a Google Chat webhook. Also works as a command-line tool |
-| `ta-host.py` | Host agent, runs on your PC rather than in Docker. Lists worktrees, measures how full each Claude chat is, and runs worktree jobs |
+| `ta-host.py` | Host agent, runs on your PC rather than in Docker. Lists worktrees, measures how full each Claude chat is, runs worktree jobs, and opens terminals for Run buttons |
 | `index.html`, `ta-local.js` | The dashboard page |
 | `config.py` | Loads `config.json`. Your GitHub username comes from `gh`, never from the config |
 | `drafts.py`, `DRAFTING.md` | Optional Claude review drafts |
@@ -149,7 +151,7 @@ flowchart LR
 
 ## FAQ
 
-**Does it use Claude tokens?** No. Two optional features (`autoDraft`, `notifyClaude`) do, and both are off by default. See [Token use](SETUP.md#token-use).
+**Does it use Claude tokens?** No. Two optional features (`autoDraft`, `notifyClaude`) do, and both are off by default. Run buttons that start Claude open a normal Claude Code chat, which uses tokens like any chat you start yourself. See [Token use](SETUP.md#token-use).
 
 **Does it post anything as me?**
 - Follow-ups go to Google Chat through the space's webhook, so they appear under the webhook's name, not yours.
@@ -159,6 +161,8 @@ flowchart LR
 **How do I add a teammate to Team PRs?** Add their GitHub username to `chat-people.json` and press **Refresh now**. See [SETUP.md, Add one person](SETUP.md#61-add-one-person).
 
 **How do I set up the Google Chat webhook?** See [SETUP.md, Create the webhook](SETUP.md#51-create-the-webhook). One webhook per space is enough for the whole team.
+
+**Can a Run button run any command?** No. The page only sends a button name and a ticket, PR or chat ID. The commands themselves are fixed in `ta-host.py`, and anything else is ignored.
 
 **Can other people open my dashboard?** No. It only listens on `127.0.0.1`, and every button needs a secret key that's created on your PC.
 

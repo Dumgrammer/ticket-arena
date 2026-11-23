@@ -107,6 +107,8 @@
 .ta-cmd { display: flex; gap: 8px; align-items: stretch; min-width: 0; }
 .ta-cmd code { flex: 1; min-width: 0; font: 500 13px var(--ta-mono); background: var(--ta-bg); color: var(--ta-ok); padding: 9px 10px; overflow-x: auto; white-space: nowrap; border: 1px solid var(--ta-line); user-select: all; }
 .ta-copy { position: relative; }
+.ta-cmd .ta-run { flex: none; }
+.ta-wt-acts { display: flex; gap: 8px; flex-wrap: wrap; margin: 2px 0 4px; }
 .ta-copy.done { background: var(--ta-ok); }
 .ta-copy.done::after { content: "Copied"; position: absolute; inset: 0; display: grid; place-items: center; background: var(--ta-ok); color: var(--ta-bg); clip-path: inherit; }
 
@@ -399,7 +401,7 @@
         <h2><span class="ta-round">Round 5</span> Worktrees</h2>
         <div class="ta-controls"><label class="ta-sortsel"><input type="checkbox" id="ta-wt-all"> Show all worktrees</label></div>
       </div>
-      <p class="ta-note">Your git worktrees and the Claude Code chats working in each one. The meter shows how full each chat's context is, so you can tell whether to keep going or start a fresh chat. A chat counts toward a worktree when it ran in that folder, or when its title names the ticket or one of its PRs. Needs the host agent running (python3 ta-host.py).</p>
+      <p class="ta-note">Your git worktrees and the Claude Code chats working in each one. The meter shows how full each chat's context is, so you can tell whether to keep going or start a fresh chat. A chat counts toward a worktree when it ran in that folder, or when its title names the ticket or one of its PRs. <b>New Claude chat</b>, <b>Terminal</b> and <b>Run</b> open a terminal tab right in that folder. Needs the host agent, which <code>./ta.sh up</code> starts.</p>
       <div class="ta-wtbar" data-draw="wt-new"></div>
       <div class="ta-ctxkey" data-draw="wt-key"></div>
       <div class="ta-wts" data-draw="wt-list" data-source="worktrees"></div>
@@ -415,7 +417,7 @@
           <input class="ta-input" id="ta-pr" inputmode="numeric" pattern="[0-9]*" aria-label="PR number" data-draw="pr-input">
         </div>
       </div>
-      <p class="ta-note">Copy a command and paste it into Claude Code or your terminal. The slash commands need the start-ticket and resolve-pr-ticket skills installed in your Claude Code.</p>
+      <p class="ta-note"><b>Run</b> opens a new terminal tab in the ticket's worktree (or your main checkout) with the command already running. <b>Copy</b> is there if you'd rather paste it yourself. The slash commands start Claude Code, so they use tokens like typing them would, and need the start-ticket and resolve-pr-ticket skills.</p>
       <div class="ta-combos" data-draw="combo-cards"></div>
     </section>
 
@@ -753,15 +755,31 @@ dash.draw('stuck-list', (ul) => {
 </script>
 
 <script>
-const taCmdRow = (cmd, label) => {
+// Run: the host agent opens a terminal tab in the right folder with this command running.
+// Only a move name and its argument are sent; the command itself is fixed in ta-host.py.
+const taRunBtn = (move, arg, label, aria, cls) => {
+  const a = window.taAction(label || 'Run', `run?move=${encodeURIComponent(move)}&arg=${encodeURIComponent(arg || '')}`,
+    'ta-run' + (cls ? ' ' + cls : ''), () => setTimeout(() => window.taReloadWorktrees && window.taReloadWorktrees(), 2500));
+  if (aria) a.setAttribute('aria-label', aria);
+  if (!arg) {
+    a.removeAttribute('href'); a.setAttribute('aria-disabled', 'true'); a.classList.add('ghost');
+    a.title = 'Fill in the ticket or PR first';
+    a.addEventListener('click', (e) => { e.preventDefault(); e.stopImmediatePropagation(); }, true);
+  }
+  return a;
+};
+const taCmdRow = (cmd, label, run) => {
   const row = document.createElement('div'); row.className = 'ta-cmd';
   const code = document.createElement('code'); code.textContent = cmd;
-  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ta-btn ta-copy'; btn.textContent = 'Copy';
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ta-btn ta-copy' + (run ? ' ghost' : ''); btn.textContent = 'Copy';
   btn.setAttribute('aria-label', label);
   btn.onclick = () => window.taCopy(btn, code);
-  row.append(code, btn);
+  row.append(code);
+  if (run) row.append(taRunBtn(run.move, run.arg, 'Run', run.aria));
+  row.append(btn);
   return row;
 };
+window.taRunBtn = taRunBtn;
 
 window.TA_CTRL = window.TA_LOCAL ? '' : 'http://localhost:8765';
 window.TA_KEY = window.TA_CFG.key; // injected by control.py; never hardcode it
@@ -1025,12 +1043,12 @@ dash.draw('pr-input', (inp) => {
 });
 
 const COMBOS = [
-  { name: 'Start ticket', keys: 'Ticket', desc: 'Creates the ticket branch in its own worktree, plans, implements, tests, then asks before opening the PR.', cmd: (t) => `/start-ticket ${t}` },
-  { name: 'Resolve PR', keys: 'Ticket', desc: 'One pass: reads the ticket and PR, fixes in-scope review comments and failing checks, stops for your approval.', cmd: (t) => `/resolve-pr-ticket ${t}` },
-  { name: 'Auto-guard', keys: 'Ticket · every 30 min', desc: 'Keeps polling the PR and runs a resolve pass whenever new comments or failed checks land.', cmd: (t) => `/loop 30m /resolve-pr-ticket ${t}` },
-  { name: 'Self review', keys: 'PR', desc: 'Runs a high-effort code review on the PR before your reviewers do.', cmd: (t, p) => `/code-review high ${p}` },
-  { name: 'Watch checks', keys: 'PR', desc: 'Streams CI status in your terminal and exits when every check finishes.', cmd: (t, p) => `gh pr checks ${p} -R ${window.TA_CFG.repo} --watch` },
-  { name: 'Unresolved threads', keys: 'PR', desc: 'Lists open review threads on the PR so you can answer them in one sitting.', cmd: (t, p) => `gh pr view ${p} -R ${window.TA_CFG.repo} --comments` },
+  { name: 'Start ticket', keys: 'Ticket', desc: 'Creates the ticket branch in its own worktree, plans, implements, tests, then asks before opening the PR.', move: 'start', needs: 't', cmd: (t) => `/start-ticket ${t}` },
+  { name: 'Resolve PR', keys: 'Ticket', desc: 'One pass: reads the ticket and PR, fixes in-scope review comments and failing checks, stops for your approval.', move: 'resolve', needs: 't', cmd: (t) => `/resolve-pr-ticket ${t}` },
+  { name: 'Auto-guard', keys: 'Ticket · every 30 min', desc: 'Keeps polling the PR and runs a resolve pass whenever new comments or failed checks land.', move: 'guard', needs: 't', cmd: (t) => `/loop 30m /resolve-pr-ticket ${t}` },
+  { name: 'Self review', keys: 'PR', desc: 'Runs a high-effort code review on the PR before your reviewers do.', move: 'review', needs: 'p', cmd: (t, p) => `/code-review high ${p}` },
+  { name: 'Watch checks', keys: 'PR', desc: 'Streams CI status in your terminal and exits when every check finishes.', move: 'checks', needs: 'p', cmd: (t, p) => `gh pr checks ${p} -R ${window.TA_CFG.repo} --watch` },
+  { name: 'Unresolved threads', keys: 'PR', desc: 'Lists open review threads on the PR so you can answer them in one sitting.', move: 'threads', needs: 'p', cmd: (t, p) => `gh pr view ${p} -R ${window.TA_CFG.repo} --comments` },
 ];
 
 window.taCopy = (btn, code) => copyCmd(btn, code);
@@ -1051,12 +1069,8 @@ dash.draw('combo-cards', (box) => {
     const h = document.createElement('h3'); h.textContent = c.name;
     const k = document.createElement('div'); k.className = 'inputs'; k.textContent = c.keys;
     const d = document.createElement('p'); d.textContent = c.desc;
-    const row = document.createElement('div'); row.className = 'ta-cmd';
-    const code = document.createElement('code'); code.textContent = c.cmd(t, p);
-    const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'ta-btn ta-copy'; btn.textContent = 'Copy';
-    btn.setAttribute('aria-label', `Copy ${c.name} command`);
-    btn.onclick = () => copyCmd(btn, code);
-    row.append(code, btn);
+    const arg = c.needs === 't' ? (window.ta.ticket || '') : (window.ta.pr || '');
+    const row = taCmdRow(c.cmd(t, p), `Copy ${c.name} command`, { move: c.move, arg, aria: `Run ${c.name} in a new terminal` });
     card.append(h, k, d, row);
     box.append(card);
   });
@@ -1129,7 +1143,7 @@ dash.draw('wt-list', (box) => {
   const d = dash.data('worktrees');
   if (d.status === 'loading') return note('Loading worktrees…');
   const w = taWt();
-  if (!w || !w.worktrees) return note('No worktree data yet. Start the host agent on your PC: python3 ta-host.py');
+  if (!w || !w.worktrees) return note('No worktree data yet. Start the host agent on your PC: ./ta.sh up');
   const tk = dash.data('tickets'); const tmap = new Map((tk.status === 'ok' ? tk.data : []).map((t) => [String(t.ticket), t]));
   const jobs = (w.jobs || []).slice().reverse();
   if (jobs.length) {
@@ -1138,7 +1152,7 @@ dash.draw('wt-list', (box) => {
       const li = document.createElement('li');
       li.style.setProperty('--jc', j.status === 'running' ? 'var(--ta-yellow)' : j.status === 'done' ? 'var(--ta-ok)' : 'var(--ta-bad)');
       const top = document.createElement('div'); top.className = 'ta-card-top';
-      top.textContent = `${j.action === 'new' ? 'Create' : 'Remove'} worktree ${j.ticket} · ${j.status === 'running' ? 'running…' : j.status} · ${taAgo(j.endedAt || j.startedAt)}`;
+      top.textContent = `${j.action === 'run' ? 'Run' : j.action === 'new' ? 'Create worktree' : 'Remove worktree'} ${j.ticket} · ${j.status === 'running' ? 'running…' : j.status} · ${taAgo(j.endedAt || j.startedAt)}`;
       const pre = document.createElement('pre'); pre.textContent = (j.tail || []).slice(-3).join('\n');
       li.append(top, pre); ul.append(li);
     });
@@ -1166,6 +1180,13 @@ dash.draw('wt-list', (box) => {
     if (!r.exists) pill('folder gone', 'bad');
     top.append(left, pills);
     card.append(top);
+    const place = r.isMain ? 'main' : r.ticket;
+    if (place && r.exists) {
+      const acts = document.createElement('div'); acts.className = 'ta-wt-acts';
+      acts.append(window.taRunBtn('chat', place, 'New Claude chat', `Start a new Claude chat in ${r.path}`),
+        window.taRunBtn('shell', place, 'Terminal', `Open a terminal in ${r.path}`, 'ghost'));
+      card.append(acts);
+    }
     if (r.isMain && r.sessions.length) { const p = document.createElement('p'); p.className = 'ta-note'; p.textContent = 'Chats from the main folder that name no worktree ticket (reviews of other PRs, questions).'; card.append(p); }
     const ul = document.createElement('ul'); ul.className = 'ta-sess';
     const show = r.isMain ? r.sessions.slice(0, 3) : r.sessions.slice(0, 4);
@@ -1188,7 +1209,7 @@ dash.draw('wt-list', (box) => {
       const b = document.createElement('b'); b.textContent = lbl; v.append(b, taVerdict(s, w));
       const meta = document.createElement('div'); meta.className = 'meta';
       meta.textContent = `${s.prompts} prompt${s.prompts === 1 ? '' : 's'} · last active ${taAgo(s.lastAt)}` + (s.cwd && s.cwd !== r.path ? ` · ran in ${s.cwd.split('/').slice(-1)[0]}` : '');
-      li.append(r1, g, v, meta, window.taCmdRow(s.resume, `Copy the command to resume ${s.title}`));
+      li.append(r1, g, v, meta, window.taCmdRow(s.resume, `Copy the command to resume ${s.title}`, { move: 'resume', arg: s.id, aria: `Resume ${s.title} in a new terminal` }));
       ul.append(li);
     });
     if (show.length) card.append(ul);

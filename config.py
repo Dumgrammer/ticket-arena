@@ -31,6 +31,9 @@ DEFAULTS = {
     "contextWarnTokens": 200000,
     "contextStopTokens": 350000,
     "hostIntervalSeconds": 15,
+    # how Run buttons open a terminal; "" = auto (Windows Terminal on WSL, Terminal.app on macOS,
+    # x-terminal-emulator on Linux). Placeholders: {script} {title} {cwd}
+    "terminalCommand": "",
     # Claude features that spend tokens: both off unless you turn them on
     "autoDraft": False,       # queue a Claude review draft for PRs that request your review
     "notifyClaude": False,    # write REFRESH lines so a watching Claude session re-uploads to claude.ai

@@ -26,6 +26,7 @@
   "contextWarnTokens": 200000,
   "contextStopTokens": 350000,
   "hostIntervalSeconds": 15,
+  "terminalCommand": "",
   "autoDraft": false,
   "notifyClaude": false
 }

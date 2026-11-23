@@ -72,6 +72,7 @@ Open `config.json`. Your team lead can share a ready-made `config.json` privatel
 | Key | What it is |
 |---|---|
 | `worktreeMain` | Your main checkout of the repo |
+| `terminalCommand` | How Run buttons open a terminal. Leave `""` to pick one automatically |
 | `worktreeNewCommand` / `worktreeRemoveCommand` | Commands that create and remove a worktree |
 | `contextWindow` | Your Claude model's context window, in tokens |
 | `contextWarnTokens` / `contextStopTokens` | Where the meter switches to "Wrap up" and "Start a new chat" |
@@ -315,6 +316,29 @@ If you have your own worktree script that also installs and builds, use that ins
 
 Run `./ta.sh restart` after changing these.
 
+**Run buttons and terminals**
+
+**Run**, **New Claude chat** and **Terminal** ask the host agent to open a new terminal tab in the right folder and run the command there. The host agent picks a terminal by itself:
+
+| System | Opens |
+|---|---|
+| WSL | A new tab in Windows Terminal (`wt.exe`). Without Windows Terminal, a plain console window |
+| macOS | Terminal.app |
+| Linux desktop | `x-terminal-emulator`, `gnome-terminal`, `konsole` or `xterm`, whichever exists |
+
+To use a different terminal, set `terminalCommand` in `config.json`. `{script}` is a small script the host agent writes, which changes to the folder and runs the command. For example:
+
+```json
+"terminalCommand": "kitty bash -i {script}"
+```
+
+You can also use `{title}` (tab title) and `{cwd}` (the folder).
+
+The folder is chosen like this:
+- **Ticket** buttons (Start ticket, Resolve PR, Auto-guard) use the ticket's worktree if you have one, else `worktreeMain`.
+- **PR** buttons use the worktree of the PR's ticket, else `worktreeMain`.
+- **Resume** uses the folder the chat ran in.
+
 **How the context meter works**
 - Claude Code saves every chat on your PC in `~/.claude/projects`. The host agent reads each chat's latest token count from there. Nothing is sent anywhere, and it costs no tokens.
 - A chat is shown under the worktree folder it ran in. Otherwise it goes under the worktree whose ticket or PR number appears in the chat's title, and failing that under "Main checkout".
@@ -370,6 +394,8 @@ Then delete the folder.
 | Tags show as `@Name` but nobody is pinged | That person has no `id` in `chat-people.json` ([6.1](#61-add-one-person)) |
 | Someone is missing from Team PRs | Their GitHub username in `chat-people.json` is misspelled, or they have no open PRs in `repo`. Then press **Refresh now** |
 | Refresh fails after editing `chat-people.json` | The file isn't valid JSON, usually a missing or extra comma. Run `python3 -m json.tool chat-people.json` to see where |
+| Run does nothing | Check that the Worktrees page says **Host agent live**. Then look at the Run card on the Worktrees page, or `./ta.sh logs`. On Linux, the host agent's service may not see your desktop session. Set `terminalCommand`, or run `ta-host.py` from a terminal |
+| Run opens a tab, but `claude` or `gh` is not found | The tab runs `bash -i`, so these must be on the `PATH` set in your `~/.bashrc` |
 | Port 8765 already in use | Change the left side of `ports` in `docker-compose.yml`, e.g. `127.0.0.1:9000:8765` |
 | Files in `data/` owned by root | Run `sudo chown -R $(id -u):$(id -g) data`, then `./ta.sh up` |
 | macOS: host agent stops after reboot | macOS has no systemd, so run `./ta.sh up` again after you log in |

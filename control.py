@@ -217,8 +217,21 @@ class H(BaseHTTPRequestHandler):
             msg = ("The host agent is creating it now; progress shows in the Worktrees section." if action == "wt-new"
                    else "The host agent is removing it (refused if it has uncommitted changes; the branch is kept).")
             if not alive:
-                msg = "Queued, but the host agent isn't running: start it with python3 ta-host.py (see SETUP.md)."
+                msg = "Queued, but the host agent isn't running: start it with ./ta.sh up (see SETUP.md)."
             return self.reply(200 if alive else 503, f"Worktree {t}", msg, "#8a6a00" if alive else "#c0262d")
+        if action == "run":
+            move, arg = q.get("move", ""), q.get("arg", "").strip()
+            moves = {"resume": r"[0-9a-f-]{36}", "chat": r"main|\d{2,7}", "shell": r"main|\d{2,7}",
+                     "start": r"(?:[A-Za-z]+-)?\d{2,7}", "resolve": r"(?:[A-Za-z]+-)?\d{2,7}",
+                     "guard": r"(?:[A-Za-z]+-)?\d{2,7}", "review": r"\d{1,7}", "checks": r"\d{1,7}", "threads": r"\d{1,7}"}
+            if move not in moves or not re.fullmatch(moves[move], arg):
+                return self.reply(400, "Not run", "That button sent something unexpected.", "#c0262d")
+            with open(HERE / "requests.log", "a") as f:
+                f.write(f"RUN {move} {arg}\n")
+            host = HERE / "data" / "worktrees.json"
+            if not (host.exists() and time.time() - host.stat().st_mtime < 120):
+                return self.reply(503, "Not run", "The host agent isn't running, so it can't open a terminal. Start it with ./ta.sh up.", "#c0262d")
+            return self.reply(200, "Opening a terminal", "A new terminal tab opens in a few seconds.", "#0b6f78")
         if action == "status":
             return self.reply(200, "Status", "Current follow-up settings:", "#0b6f78")
         return self.reply(404, "Unknown button", f"No action called '{action}'.", "#c0262d")

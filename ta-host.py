@@ -9,12 +9,14 @@ Every few seconds it:
   - reads the Claude Code sessions in ~/.claude/projects (only what was appended since last time)
     and works out how full each session's context is
   - runs worktree jobs the dashboard queued in requests.log ("WT_NEW <ticket>", "WT_RM <ticket>")
+  - opens a terminal for the dashboard's Run buttons ("RUN <move> <arg>"), running one of the
+    fixed commands in MOVES in the right worktree. Nothing else can be run this way.
 and writes data/worktrees.json for the dashboard.
 
   python3 ta-host.py            keep running (Ctrl+C to stop)
   python3 ta-host.py --once     one pass, then exit
 """
-import json, os, re, shlex, subprocess, sys, threading, time
+import json, os, platform, re, shlex, shutil, subprocess, sys, threading, time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -272,6 +274,107 @@ def start_job(action, ticket):
     threading.Thread(target=work, daemon=True).start()
 
 
+# ---- Run buttons: open a terminal with a fixed command ----------------------
+# move -> (kind of argument, command). The dashboard only ever sends a move name and an argument;
+# the command text lives here, so a request can't run anything else.
+MOVES = {
+    "resume":  ("session", "claude --resume {arg}"),
+    "chat":    ("place",   "claude"),
+    "shell":   ("place",   ""),
+    "start":   ("ticket",  'claude "/start-ticket {arg}"'),
+    "resolve": ("ticket",  'claude "/resolve-pr-ticket {arg}"'),
+    "guard":   ("ticket",  'claude "/loop 30m /resolve-pr-ticket {arg}"'),
+    "review":  ("pr",      'claude "/code-review high {arg}"'),
+    "checks":  ("pr",      "gh pr checks {arg} -R {repo} --watch"),
+    "threads": ("pr",      "gh pr view {arg} -R {repo} --comments"),
+}
+ARG_OK = {"session": re.compile(r"^[0-9a-f-]{36}$"), "ticket": TICKET_OK,
+          "pr": re.compile(r"^\d{1,7}$"), "place": re.compile(r"^(?:main|\d{2,7})$")}
+RUN_DIR = HERE / "data" / "run"
+
+
+def place_for(ticket_num):
+    """The worktree folder for a ticket number, else the main checkout."""
+    for r in LAST["rows"]:
+        if ticket_num and r["ticket"] == ticket_num and not r["isMain"] and not r.get("agent") and r["exists"]:
+            return r["path"]
+    return str(MAIN)
+
+
+def wsl_distro():
+    d = os.environ.get("WSL_DISTRO_NAME")
+    if d:
+        return d
+    m = re.search(r"\\\\wsl(?:\.localhost|\$)\\([^\\]+)", run("wslpath", "-w", "/"))
+    return m.group(1) if m else ""
+
+
+def terminal_cmd(script, title, cwd):
+    """argv that opens a new terminal window/tab running `bash -i script`."""
+    tpl = C.get("terminalCommand") or ""
+    if tpl:
+        return [a.replace("{script}", script).replace("{title}", title).replace("{cwd}", cwd)
+                for a in shlex.split(os.path.expanduser(tpl))]
+    if "microsoft" in platform.release().lower():                    # WSL: a new Windows Terminal tab
+        wt = shutil.which("wt.exe") or next(iter(Path("/mnt/c/Users").glob("*/AppData/Local/Microsoft/WindowsApps/wt.exe")), None)
+        distro = wsl_distro()
+        inner = ["wsl.exe"] + (["-d", distro] if distro else []) + ["--", "bash", "-i", script]
+        if wt:
+            return [str(wt), "-w", "0", "new-tab", "--title", title] + inner
+        return ["cmd.exe", "/c", "start", "", *inner]
+    if sys.platform == "darwin":
+        return ["open", "-a", "Terminal", script]
+    for t in ("x-terminal-emulator", "gnome-terminal", "konsole", "xterm"):
+        if shutil.which(t):
+            return [t, "--", "bash", "-i", script] if t == "gnome-terminal" else [t, "-e", "bash", "-i", script]
+    raise RuntimeError("no terminal found: set terminalCommand in config.json")
+
+
+def run_move(move, arg):
+    if move not in MOVES:
+        return
+    kind, tpl = MOVES[move]
+    if not ARG_OK[kind].match(arg):
+        return
+    job = {"action": "run", "ticket": f"{move} {arg}", "status": "running", "startedAt": now_iso(), "endedAt": "", "tail": []}
+    with JOB_LOCK:
+        JOBS.append(job)
+        del JOBS[:-8]
+    num = re.sub(r"\D", "", arg)
+    if kind == "session":
+        s = next((x for r in LAST["rows"] for x in r["sessions"] if x["id"] == arg), None)
+        if not s:
+            job.update(status="failed", endedAt=now_iso(), tail=["that chat isn't in the last few days of sessions"])
+            return
+        cwd, title = s["cwd"] or str(MAIN), s["title"][:40]
+    elif kind == "pr":
+        t = prmap().get(arg, "")
+        cwd, title = place_for(t), f"#{arg}"
+    elif kind == "place":
+        cwd, title = place_for("" if arg == "main" else arg), ("main" if arg == "main" else f"{PREFIX}-{arg}")
+    else:
+        cwd, title = place_for(num), f"{PREFIX}-{num}"
+    cmd = tpl.replace("{arg}", arg).replace("{repo}", config.get("repo"))
+    title = re.sub(r"[^\w #.-]", "", f"{title} {move}").strip()[:60] or move
+    RUN_DIR.mkdir(parents=True, exist_ok=True)
+    script = RUN_DIR / f"{move}-{num or 'main'}.sh"
+    script.write_text("\n".join([
+        "#!/usr/bin/env bash",
+        "# written by ta-host.py for a dashboard Run button",
+        f"cd {shlex.quote(cwd)} || exit 1",
+        *( [f"echo {shlex.quote('$ ' + cmd)}", cmd] if cmd else [] ),
+        "exec bash -i",
+        "",
+    ]))
+    script.chmod(0o700)
+    try:
+        subprocess.Popen(terminal_cmd(str(script), title, cwd), cwd=cwd, stdin=subprocess.DEVNULL,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        job.update(status="done", endedAt=now_iso(), tail=[f"opened a terminal in {cwd}", f"$ {cmd}" if cmd else "$ (shell)"])
+    except (OSError, RuntimeError) as e:
+        job.update(status="failed", endedAt=now_iso(), tail=[str(e)[:200]])
+
+
 def read_requests():
     st = json.loads(STATE.read_text()) if STATE.exists() else {}
     size = LOG.stat().st_size if LOG.exists() else 0
@@ -285,6 +388,8 @@ def read_requests():
                 parts = line.split()
                 if len(parts) >= 2 and parts[0] in ("WT_NEW", "WT_RM"):
                     start_job("new" if parts[0] == "WT_NEW" else "rm", parts[1])
+                elif len(parts) == 3 and parts[0] == "RUN":
+                    run_move(parts[1], parts[2])
     st["logOffset"] = size
     STATE.write_text(json.dumps(st))
 
@@ -339,4 +444,11 @@ if __name__ == "__main__":
         if "--once" in sys.argv:
             print(f"wrote {OUT} in {time.time() - t0:.1f}s")
             break
-        time.sleep(max(1, interval - (time.time() - t0)))
+        while time.time() - t0 < interval:     # pick up button clicks within a second
+            time.sleep(1)
+            try:
+                if LOG.exists() and LOG.stat().st_size != json.loads(STATE.read_text()).get("logOffset"):
+                    read_requests()
+                    write()
+            except Exception as e:  # noqa: BLE001
+                print("request failed:", e, flush=True)
