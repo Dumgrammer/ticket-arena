@@ -95,10 +95,6 @@ Filters include: hide drafts, promotions or approved PRs; only "replied to me", 
 
 The bar shows tokens used out of the context window. It has marks at both limits, plus a dotted line where your own chats usually auto-compact. Each chat also shows its prompt count and number of compactions, a green dot if it was active in the last 10 minutes, and a copy button for `claude --resume`. You can change the limits in `config.json`.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/09-context-meter.png`
-> Capture: a close-up of one worktree card with a "Wrap up" or "Start a new chat" chat, so the meter, its marks and the verdict text are readable.
-
 <img width="2560" height="1600" alt="Worktree" src="https://github.com/user-attachments/assets/f1f11d03-2d29-48b8-9273-093e998b2210" />
 
 ### Round 3: Combo moves
