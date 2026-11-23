@@ -98,12 +98,6 @@ This one command:
 1. builds and starts the Docker container, which runs the dashboard, the GitHub refresh and follow-ups
 2. starts the host agent on your PC, which handles worktrees and the context meter. On Linux and WSL it's installed as a background service, so it restarts if it crashes and starts again when you log in
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/11-ta-up-terminal.png`
-> Capture: a terminal after running `./ta.sh up` and then `./ta.sh status`, with "dashboard: http://localhost:8765" and both parts running.
-
-![./ta.sh up output](docs/images/11-ta-up-terminal.png)
-
 Open **http://localhost:8765**. The first GitHub refresh takes about a minute. If the page is empty, wait a moment and press **Refresh now**.
 
 **Check that it worked**
@@ -153,12 +147,6 @@ A webhook is a secret URL that lets a program post into one Chat space. You need
    - **Avatar URL**: optional, any image URL.
 5. Click **Save**, then the **copy** icon next to the new webhook to copy its URL. It looks like `https://chat.googleapis.com/v1/spaces/AAAA.../messages?key=...&token=...`.
 
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/12-gchat-webhook.png`
-> Capture: the Google Chat "Webhooks" dialog after adding one. **Blur the webhook URL**: anyone who has it can post to the space.
-
-![Google Chat webhook dialog](docs/images/12-gchat-webhook.png)
-
 **Don't see Webhooks?**
 - In a space, only space managers can add webhooks. Ask a manager to add one and send you the URL privately, or to make you a manager.
 - Webhooks don't exist in one-to-one or group DMs, only in named spaces.
@@ -197,12 +185,6 @@ python3 followup.py 12345
 Press **Start follow-ups** in **PR comments**. Follow-ups start **off**. From then on, each refresh posts for every open PR whose last post is older than the interval (45 minutes by default).
 
 These PRs are always left out: drafts, promotion PRs (into a branch in `promoBranches`), and merged or closed PRs. Use **Skip** on a PR to leave out others.
-
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/13-follow-up-in-chat.png`
-> Capture: a follow-up message as it appears in the Google Chat space, with the PR link and the cc mentions.
-
-![A follow-up in Google Chat](docs/images/13-follow-up-in-chat.png)
 
 ### 5.5 Change who gets tagged and what it says
 
@@ -300,12 +282,6 @@ python3 import_chat_ids.py
 ```
 
 It matches Chat names to the GitHub usernames of people who reviewed your last 50 PRs, and adds them to `chat-people.json`. It keeps entries you already had. At the end it lists the people it couldn't match: add those by hand as in 6.1.
-
-> [!NOTE]
-> **SCREENSHOT TODO** `docs/images/14-chat-scrape-console.png`
-> Capture: the DevTools console after running `chat-scrape.js`, showing "Copied N people to the clipboard". **Blur the names and IDs.**
-
-![Running chat-scrape.js](docs/images/14-chat-scrape-console.png)
 
 If Chat is open inside Gmail, the console can't see it. Use chat.google.com, or switch the Console's context dropdown (top-left) to the Chat frame.
 
