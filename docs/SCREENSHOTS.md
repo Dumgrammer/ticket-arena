@@ -15,7 +15,7 @@ grep -rn "SCREENSHOT TODO" README.md SETUP.md
 ## General tips
 
 - Use a browser window about **1300 px wide** at 100% zoom, so the dashboard isn't in its phone layout.
-- Crop to the section. Leave out the browser bar and tabs.
+- Open each section from the navbar (the "Where" column names the page). Crop to the section and leave out the browser bar and tabs. For `01-overview.png`, keep the navbar in the shot.
 - Save as PNG. Keep each file under about 500 KB, and compress at tinypng.com if needed.
 - **Blur before saving**: webhook URLs, Google Chat user IDs, and anything from a customer or client. Teammates' names and PR titles are fine for an internal repo. If the repo will be public, blur those too.
 

@@ -22,9 +22,13 @@ A personal dashboard for your tickets, PRs and Claude Code chats. It runs on you
 
 ## Feature tour
 
-### Header and summary counters
+### Navigation
 
-The header shows your repo and GitHub username, a one-line summary, and a **Refresh now** button. Below it are six counters: **In review**, **Merged to main**, **Promoting**, **On staging**, **Needs your reply** and **Stuck**. Data refreshes from GitHub every 15 minutes by itself.
+A navbar stays pinned to the top of the window. It has six pages: **Overview**, **Tickets**, **PR comments**, **Team PRs**, **Worktrees** and **Commands**. A badge on each tab counts what needs you there: stuck tickets, comments waiting for your reply, PRs waiting on you, and chats that should start fresh. The navbar also holds the **Refresh now** button. Press keys **1** to **6** to switch pages. Each page has its own link (e.g. `localhost:8765/#/worktrees`), so bookmarks and the back button work.
+
+### Overview: header and summary counters
+
+The header shows your repo and GitHub username and a one-line summary. Below it are six counters: **In review**, **Merged to main**, **Promoting**, **On staging**, **Needs your reply** and **Stuck**. Data refreshes from GitHub every 15 minutes by itself.
 
 ### Danger zone: stuck tickets
 
@@ -161,6 +165,10 @@ flowchart LR
 - Follow-ups go to Google Chat through the space's webhook, so they appear under the webhook's name, not yours.
 - Review drafts reach GitHub as you, but only when you press **Post**.
 - Nothing else writes to GitHub.
+
+**How do I add a teammate to Team PRs?** Add their GitHub username to `chat-people.json` and press **Refresh now**. See [SETUP.md, Add one person](SETUP.md#61-add-one-person).
+
+**How do I set up the Google Chat webhook?** See [SETUP.md, Create the webhook](SETUP.md#51-create-the-webhook). One webhook per space is enough for the whole team.
 
 **Can other people open my dashboard?** No. It only listens on `127.0.0.1`, and every button needs a secret key that's created on your PC.
 

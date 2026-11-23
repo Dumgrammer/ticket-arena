@@ -80,7 +80,7 @@ def local_page():
     body = re.sub(r"</script>", "\n})();</script>", body)
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Ticket Arena</title>
-<style>html,body{{margin:0;background:#0c0a17}}</style>
+<style>html,body{{margin:0;background:#f1f2f1}}</style>
 <script>window.TA_LOCAL = true; window.TA_CONFIG = {cfg};</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
 <script src="/ta-local.js"></script>
@@ -99,11 +99,11 @@ TOKEN = TOKEN_FILE.read_text().strip()
 PAGE = """<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <title>Ticket Arena · {title}</title>
 <style>
-body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#0c0a17;color:#f5f2ff;
-font:16px 'Segoe UI',system-ui,sans-serif}}
-.c{{padding:28px 32px;border-top:4px solid {color};background:#161229;max-width:560px;margin:16px}}
-h1{{font:italic 900 40px Impact,'Arial Narrow Bold',sans-serif;text-transform:uppercase;margin:0 0 10px;color:{color}}}
-p{{margin:6px 0;color:#a8a1c9}} b{{color:#f5f2ff}}
+body{{margin:0;min-height:100vh;display:grid;place-items:center;background:#f1f2f1;color:#1b1d1f;
+font:16px Inter,'Segoe UI',system-ui,sans-serif}}
+.c{{padding:28px 32px;border-top:6px solid {color};background:#fff;max-width:560px;margin:16px;box-shadow:0 1px 3px rgba(27,29,31,.12)}}
+h1{{font:900 36px 'Arial Black','Helvetica Neue',sans-serif;text-transform:uppercase;margin:0 0 10px;color:#1b1d1f}}
+p{{margin:6px 0;color:#5f6062}} b{{color:#1b1d1f}}
 </style>
 <div class="c"><h1>{title}</h1><p>{msg}</p><p><b>{status}</b></p>
 <p>You can close this tab.</p></div>
@@ -121,7 +121,7 @@ class H(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
-    def reply(self, code, title, msg, color="#77f56a"):
+    def reply(self, code, title, msg, color="#cdf564"):
         if getattr(self, "want_json", False):
             return self.send_raw(code, "application/json", json.dumps(
                 {"ok": code < 400, "title": title, "msg": msg, "status": followup.status_line()}).encode())
@@ -146,7 +146,7 @@ class H(BaseHTTPRequestHandler):
             f = HERE / u.path.lstrip("/")
             return self.send_raw(200, "application/json", f.read_bytes() if f.exists() else b"[]")
         if not secrets.compare_digest(q.get("t", ""), TOKEN):
-            return self.reply(403, "Not allowed", "This link is missing the dashboard's control key.", "#ff5a4e")
+            return self.reply(403, "Not allowed", "This link is missing the dashboard's control key.", "#c0262d")
         action = u.path.strip("/")
         pr = q.get("pr", "")
         d = followup.load_settings()
@@ -156,7 +156,7 @@ class H(BaseHTTPRequestHandler):
             return self.reply(200, "Follow-ups on" if d["enabled"] else "Follow-ups off",
                               "Each open PR gets a Google Chat follow-up at the next refresh, then on the timer."
                               if d["enabled"] else "No more follow-ups will be posted until you start them again.",
-                              "#77f56a" if d["enabled"] else "#a8a1c9")
+                              "#cdf564" if d["enabled"] else "#a3a4a5")
         if action in ("skip", "unskip") and pr.isdigit():
             skip = [str(x) for x in d["skip"] if str(x) != pr]
             if action == "skip":
@@ -164,7 +164,7 @@ class H(BaseHTTPRequestHandler):
             d["skip"] = skip
             followup.save_settings(d)
             return self.reply(200, f"PR #{pr} {'skipped' if action == 'skip' else 'back on'}",
-                              f"PR #{pr} will {'not ' if action == 'skip' else ''}get follow-ups.", "#ffe03d")
+                              f"PR #{pr} will {'not ' if action == 'skip' else ''}get follow-ups.", "#8a6a00")
         if action == "post" and pr.isdigit():
             line = followup.follow_one(pr)
             if line.startswith("POSTED"):
@@ -174,42 +174,42 @@ class H(BaseHTTPRequestHandler):
                 followup.save_settings(d)
                 return self.reply(200, f"Posted #{pr}", "The follow-up was sent to Google Chat.")
             if line.startswith("MERGED"):
-                return self.reply(200, f"#{pr} is merged", "Nothing to follow up.", "#33dcff")
-            return self.reply(500, "Not posted", line, "#ff5a4e")
+                return self.reply(200, f"#{pr} is merged", "Nothing to follow up.", "#0b6f78")
+            return self.reply(500, "Not posted", line, "#c0262d")
         if action == "refresh":
             try:
                 out = run_refresh()
             except Exception as e:  # noqa: BLE001
-                return self.reply(500, "Refresh failed", str(e), "#ff5a4e")
+                return self.reply(500, "Refresh failed", str(e), "#c0262d")
             last = out[-1] if out else "UNCHANGED"
             posted = [l for l in out if l.startswith("FOLLOWUP POSTED")]
             stuck = [l.split()[1] for l in out if l.startswith("NEW_STUCK")]
             extra = (f" Posted {len(posted)} follow-up(s)." if posted else "") + (f" Newly stuck: {', '.join(stuck)}." if stuck else "")
             if self.want_json:
-                return self.reply(200, "Refreshed", "Fresh data from GitHub." + extra, "#33dcff")
+                return self.reply(200, "Refreshed", "Fresh data from GitHub." + extra, "#0b6f78")
             if last.startswith("CHANGED"):
                 return self.reply(200, "Refreshing",
-                                  f"New data from GitHub ({last.split(' ', 1)[1]}). The dashboard updates in about a minute." + extra, "#ffe03d")
-            return self.reply(200, "Up to date", "Checked GitHub just now: nothing changed since the dashboard's last update." + extra, "#33dcff")
+                                  f"New data from GitHub ({last.split(' ', 1)[1]}). The dashboard updates in about a minute." + extra, "#8a6a00")
+            return self.reply(200, "Up to date", "Checked GitHub just now: nothing changed since the dashboard's last update." + extra, "#0b6f78")
         if action == "draft" and pr.isdigit():
             drafts.set_status(pr, "drafting")
             with open(HERE / "requests.log", "a") as f:
                 f.write(f"DRAFT {pr}\n")
             return self.reply(200, f"Drafting #{pr}",
                               "Queued. A Claude Code session watching requests.log drafts it (see DRAFTING.md); "
-                              "the draft shows on the dashboard when it is done.", "#ffe03d")
+                              "the draft shows on the dashboard when it is done.", "#8a6a00")
         if action == "post-review" and pr.isdigit():
             skip = {int(x) for x in q.get("skip", "").split(",") if x.strip().isdigit()}
             ok, msg = post_review(pr, skip)
             return self.reply(200 if ok else 500, "Review posted" if ok else "Not posted", msg,
-                              "#77f56a" if ok else "#ff5a4e")
+                              "#cdf564" if ok else "#c0262d")
         if action == "discard-draft" and pr.isdigit():
             drafts.set_status(pr, "discarded")
-            return self.reply(200, f"Draft for #{pr} discarded", "Nothing was posted.", "#a8a1c9")
+            return self.reply(200, f"Draft for #{pr} discarded", "Nothing was posted.", "#a3a4a5")
         if action in ("wt-new", "wt-rm"):
             t = q.get("ticket", "").strip().upper()
             if not re.fullmatch(r"(?:[A-Z]+-)?\d{2,7}", t):
-                return self.reply(400, "Not queued", "Give a ticket like 1234 or PROJ-1234.", "#ff5a4e")
+                return self.reply(400, "Not queued", "Give a ticket like 1234 or PROJ-1234.", "#c0262d")
             with open(HERE / "requests.log", "a") as f:
                 f.write(f"{'WT_NEW' if action == 'wt-new' else 'WT_RM'} {t}\n")
             host = HERE / "data" / "worktrees.json"
@@ -218,10 +218,10 @@ class H(BaseHTTPRequestHandler):
                    else "The host agent is removing it (refused if it has uncommitted changes; the branch is kept).")
             if not alive:
                 msg = "Queued, but the host agent isn't running: start it with python3 ta-host.py (see SETUP.md)."
-            return self.reply(200 if alive else 503, f"Worktree {t}", msg, "#ffe03d" if alive else "#ff5a4e")
+            return self.reply(200 if alive else 503, f"Worktree {t}", msg, "#8a6a00" if alive else "#c0262d")
         if action == "status":
-            return self.reply(200, "Status", "Current follow-up settings:", "#33dcff")
-        return self.reply(404, "Unknown button", f"No action called '{action}'.", "#ff5a4e")
+            return self.reply(200, "Status", "Current follow-up settings:", "#0b6f78")
+        return self.reply(404, "Unknown button", f"No action called '{action}'.", "#c0262d")
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ This guide takes you from nothing to a working dashboard at http://localhost:876
 | [3. Make your config](#3-make-your-config) | Yes | |
 | [4. Start it](#4-start-it) | Yes | Tickets, stuck alerts, PR comments, Combo moves |
 | [5. Google Chat follow-ups](#5-optional-google-chat-follow-ups) | Optional | Automatic "please review" posts |
-| [6. Team list](#6-optional-team-list-and-real-mentions) | Optional | Team PRs section, real @mentions in follow-ups |
+| [6. Team list](#6-optional-team-list-and-real-mentions) | Optional | Team PRs section, real @mentions in follow-ups, adding and removing teammates |
 | [7. Worktrees and context meter](#7-optional-worktrees-and-the-context-meter) | Optional | Worktree buttons, Claude context meter |
 | [8. Claude review drafts](#8-optional-claude-review-drafts) | Optional, uses tokens | Claude-written review comments |
 
@@ -139,7 +139,19 @@ https://github.com/your-org/your-repo/pull/12345
 cc: @Reviewer One @Reviewer Two
 ```
 
-**1. Create a webhook for your space.** In Google Chat, open the space, click its name, then **Apps & integrations**, then **Webhooks**, then **Add webhook**. Give it a name (posts appear under this name) and copy the URL.
+The first post for a PR uses `firstMessage`. Every later reminder uses `bumpMessage` and is posted as a new message at the bottom of the space, so people see it.
+
+### 5.1 Create the webhook
+
+A webhook is a secret URL that lets a program post into one Chat space. You need one for the space where you ask for reviews.
+
+1. Open the space in Google Chat (chat.google.com or the Chat app).
+2. Click the **space name** at the top, then **Apps & integrations**.
+3. Click **Webhooks** (on some accounts: **Add webhooks** or **Manage webhooks**).
+4. Click **Add webhook**. Fill in:
+   - **Name**: what posts appear under, e.g. `PR reminders` or your own name. Posts show as this name with an **App** tag, not as your account.
+   - **Avatar URL**: optional, any image URL.
+5. Click **Save**, then the **copy** icon next to the new webhook to copy its URL. It looks like `https://chat.googleapis.com/v1/spaces/AAAA.../messages?key=...&token=...`.
 
 > [!NOTE]
 > **SCREENSHOT TODO** `docs/images/12-gchat-webhook.png`
@@ -147,19 +159,44 @@ cc: @Reviewer One @Reviewer Two
 
 ![Google Chat webhook dialog](docs/images/12-gchat-webhook.png)
 
-**2. Save the URL** in a file called `gchat-webhook`. It's git-ignored and only you can read it:
+**Don't see Webhooks?**
+- In a space, only space managers can add webhooks. Ask a manager to add one and send you the URL privately, or to make you a manager.
+- Webhooks don't exist in one-to-one or group DMs, only in named spaces.
+- Your Google Workspace admin can turn webhooks off for the whole company. If the option is missing for everyone, ask IT.
+
+**Can teammates share one webhook?** Yes. One webhook per space is enough, and everyone's posts will appear under its name. Each person still saves the URL in their own `gchat-webhook` file.
+
+### 5.2 Save the URL
+
+Save it in a file called `gchat-webhook` in the `ticket-arena` folder. It's git-ignored, only you can read it, and it's never sent to the dashboard page:
 
 ```bash
 echo 'https://chat.googleapis.com/v1/spaces/...' > gchat-webhook && chmod 600 gchat-webhook
 ```
 
-**3. Try it without posting.** Replace `12345` with one of your open PRs:
+Keep the single quotes: the URL contains `&`, which the shell would otherwise cut off.
+
+### 5.3 Test it
+
+First without posting. Replace `12345` with one of your open PRs:
 
 ```bash
 python3 followup.py 12345 --dry
 ```
 
-**4. Turn follow-ups on** with the **Start follow-ups** button in Round 2. They start **off**.
+It prints the exact message, including who gets tagged. When it looks right, post one for real:
+
+```bash
+python3 followup.py 12345
+```
+
+`POSTED 12345 new ...` means it worked. Check the space.
+
+### 5.4 Turn it on
+
+Press **Start follow-ups** in **PR comments**. Follow-ups start **off**. From then on, each refresh posts for every open PR whose last post is older than the interval (45 minutes by default).
+
+These PRs are always left out: drafts, promotion PRs (into a branch in `promoBranches`), and merged or closed PRs. Use **Skip** on a PR to leave out others.
 
 > [!NOTE]
 > **SCREENSHOT TODO** `docs/images/13-follow-up-in-chat.png`
@@ -167,7 +204,23 @@ python3 followup.py 12345 --dry
 
 ![A follow-up in Google Chat](docs/images/13-follow-up-in-chat.png)
 
-**From the terminal**
+### 5.5 Change who gets tagged and what it says
+
+Each follow-up tags:
+1. everyone in `alwaysCc` in `config.json` (GitHub usernames, e.g. your lead), then
+2. everyone who has already reviewed or commented on that PR, except you and bots.
+
+The PR's requested reviewers who haven't reviewed yet aren't tagged automatically. Add regulars to `alwaysCc`.
+
+```json
+"alwaysCc": ["your-lead", "another-login"],
+"firstMessage": "Good day team please review this pr thank you!",
+"bumpMessage": "Good day team bumping this for re-approval thank you!"
+```
+
+Run `./ta.sh restart` after editing `config.json`. To make the tags real pings instead of plain text, add the people to `chat-people.json` with their Chat ID ([step 6](#6-optional-team-list-and-real-mentions)).
+
+### 5.6 From the terminal
 
 | Command | What it does |
 |---|---|
@@ -176,27 +229,66 @@ python3 followup.py 12345 --dry
 | `python3 followup.py every 60` | Post every 60 minutes (minimum 15) |
 | `python3 followup.py skip 12345` / `unskip 12345` | Exclude a PR, or include it again |
 | `python3 followup.py 12345` | Post one follow-up now |
+| `python3 followup.py 12345 --dry` | Show the message without posting |
+
+### 5.7 If the webhook URL leaks
+
+Anyone with the URL can post to the space. If it ends up in a commit, a screenshot or a chat:
+1. In the space, open **Apps & integrations**, then **Webhooks**, and **delete** that webhook.
+2. Add a new one and save its URL in `gchat-webhook` again.
+
+Nothing else needs to change. Follow-ups that were already posted keep their threads.
 
 ---
 
 ## 6. Optional: team list and real mentions
 
-The **Team PRs** section and the follow-up cc list use `chat-people.json`:
+`chat-people.json` is your team list. It does two things:
+- Everyone in it appears in **Team PRs**: their open PRs, whether they ask for your review, and replies to you.
+- When a follow-up tags someone in it who has an `id`, Chat really pings them. Without an `id`, the tag is plain `@Name` text that notifies nobody.
+
+Start from the example:
 
 ```bash
 cp chat-people.example.json chat-people.json
 ```
 
+Each entry is keyed by **GitHub username**:
+
 ```json
 {
-  "github-username": { "name": "Name as shown in Google Chat", "id": "123456789012345678901" }
+  "jdoe-ce": { "name": "Jane Doe", "id": "112233445566778899001" },
+  "msmith":  { "name": "Mark Smith", "id": "" }
 }
 ```
 
-- People in this file appear in **Team PRs**.
-- With an `id`, follow-ups really ping them in Chat. Without one, they get a plain-text `@Name`.
+| Field | What it is | Where to find it |
+|---|---|---|
+| key | GitHub username | Their GitHub profile URL: `github.com/<username>`. It's case-sensitive here, so copy it exactly |
+| `name` | Their name as shown in Google Chat | Shown on Team PRs and in plain-text tags |
+| `id` | Their Google Chat user ID, all digits | See below. Leave it `""` if you only want them on Team PRs |
 
-**The quick way:** ask a teammate who already has the file for their copy.
+### 6.1 Add one person
+
+1. Find their GitHub username, from their profile or a PR they opened.
+2. Add a line to `chat-people.json`. Watch the commas: every entry except the last one ends with `,`.
+3. Optional, for real pings: get their Chat ID.
+   1. In chat.google.com, open a space they're in, then the member list (space name, then **Manage members**).
+   2. Right-click their name and choose **Inspect**.
+   3. In the highlighted HTML, find `data-member-id="user/human/112233445566778899001"`. The digits are the ID.
+4. Check the file is valid JSON:
+
+```bash
+python3 -m json.tool chat-people.json > /dev/null && echo OK
+```
+
+5. Press **Refresh now** on the dashboard. Their PRs show up in Team PRs. No restart is needed.
+
+**Remove someone:** delete their line and press **Refresh now**.
+
+### 6.2 Add a whole team at once
+
+**The quick way:** ask a teammate who already has the file for their copy. Everyone can use the same `chat-people.json`. Your own entry is ignored on Team PRs.
 
 **Collect the IDs yourself:**
 1. Open the Chat space at chat.google.com, open its member list, and scroll to the bottom so everyone has loaded.
@@ -207,13 +299,15 @@ cp chat-people.example.json chat-people.json
 python3 import_chat_ids.py
 ```
 
-It matches Chat names to the GitHub usernames of people who reviewed your PRs, then lists anyone it couldn't match so you can add them by hand.
+It matches Chat names to the GitHub usernames of people who reviewed your last 50 PRs, and adds them to `chat-people.json`. It keeps entries you already had. At the end it lists the people it couldn't match: add those by hand as in 6.1.
 
 > [!NOTE]
 > **SCREENSHOT TODO** `docs/images/14-chat-scrape-console.png`
 > Capture: the DevTools console after running `chat-scrape.js`, showing "Copied N people to the clipboard". **Blur the names and IDs.**
 
 ![Running chat-scrape.js](docs/images/14-chat-scrape-console.png)
+
+If Chat is open inside Gmail, the console can't see it. Use chat.google.com, or switch the Console's context dropdown (top-left) to the Chat frame.
 
 ---
 
@@ -295,6 +389,11 @@ Then delete the folder.
 | "Host agent not running" in Worktrees | Run `./ta.sh status`, then `./ta.sh logs` to see why. Common cause: `worktreeMain` isn't a git checkout |
 | Create worktree shows "failed" | The last output lines are on the job card, and `./ta.sh logs` has the rest. Check that your command works when you run it in a terminal from `worktreeMain` |
 | A chat is under the wrong worktree | Put the ticket number in the chat's title (`/rename PROJ-1234 ...`), or run Claude from inside the worktree folder |
+| Follow-up says "no Google Chat webhook" | `gchat-webhook` is missing or in the wrong folder. It must sit next to `followup.py` |
+| Google Chat refused the post (400 / 403 / 404) | The webhook was deleted, or the URL was cut short. Copy it again and save it with single quotes ([5.2](#52-save-the-url)) |
+| Tags show as `@Name` but nobody is pinged | That person has no `id` in `chat-people.json` ([6.1](#61-add-one-person)) |
+| Someone is missing from Team PRs | Their GitHub username in `chat-people.json` is misspelled, or they have no open PRs in `repo`. Then press **Refresh now** |
+| Refresh fails after editing `chat-people.json` | The file isn't valid JSON, usually a missing or extra comma. Run `python3 -m json.tool chat-people.json` to see where |
 | Port 8765 already in use | Change the left side of `ports` in `docker-compose.yml`, e.g. `127.0.0.1:9000:8765` |
 | Files in `data/` owned by root | Run `sudo chown -R $(id -u):$(id -g) data`, then `./ta.sh up` |
 | macOS: host agent stops after reboot | macOS has no systemd, so run `./ta.sh up` again after you log in |

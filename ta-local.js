@@ -68,7 +68,7 @@
       if (!r.ok) throw new Error(r.status);
       store.worktrees = { status: 'ok', data: await r.json() };
     } catch (e) { if (!store.worktrees || store.worktrees.status !== 'ok') store.worktrees = { status: 'error', data: [] }; }
-    ['wt-new', 'wt-list'].forEach(runDraw);
+    ['wt-new', 'wt-list', 'nav-tabs'].forEach(runDraw);
   }
   window.taReloadWorktrees = loadWorktrees;
 
@@ -76,11 +76,11 @@
     let t = document.getElementById('ta-toast');
     if (!t) {
       t = document.createElement('div'); t.id = 'ta-toast'; t.setAttribute('role', 'status');
-      t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(560px,calc(100vw - 32px));padding:12px 18px;font:600 14px "Chakra Petch",system-ui,sans-serif;color:#0c0a17;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:opacity .3s';
+      t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);max-width:min(560px,calc(100vw - 32px));padding:12px 18px;font:600 14px Inter,system-ui,sans-serif;color:#f1f2f1;z-index:50;box-shadow:0 8px 30px rgba(27,29,31,.3);transition:opacity .3s';
       document.body.append(t);
     }
     t.textContent = msg;
-    t.style.background = ok === false ? '#ff5a4e' : '#77f56a';
+    t.style.background = '#1b1d1f'; t.style.color = '#f1f2f1'; t.style.borderLeft = '6px solid ' + (ok === false ? '#e5484d' : '#cdf564');
     t.style.opacity = '1';
     clearTimeout(t._h);
     t._h = setTimeout(() => { t.style.opacity = '0'; }, 4500);

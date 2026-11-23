@@ -1,26 +1,32 @@
 <meta name="dash-one-writer">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Anton&family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@500&display=swap');
-/* Layout: arena hero band, KO-meter stat row, then three "rounds": ticket progress, PR comments, combo moves. */
+@import url('https://fonts.googleapis.com/css2?family=Archivo:ital,wdth,wght@0,62..125,400..900;1,62..125,400..900&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap');
+/* Light theme after the 2XKO site palette: off-white #f1f2f1, ink #1b1d1f, lime #cdf564 accent. Pages switch from the fixed navbar. */
 #dash-root { --dash-gutter: 0; }
 .ta {
-  --ta-bg: #0c0a17; --ta-panel: #161229; --ta-panel-2: #1e1838; --ta-line: #2e2752;
-  --ta-ink: #f5f2ff; --ta-muted: #a8a1c9;
-  --ta-pink: #ff2d8d; --ta-yellow: #ffe03d; --ta-cyan: #33dcff; --ta-ok: #77f56a; --ta-bad: #ff5a4e;
-  --ta-display: 'Anton', Impact, 'Arial Narrow Bold', sans-serif;
-  --ta-body: 'Chakra Petch', 'Segoe UI', system-ui, sans-serif;
+  /* surfaces + text (2XKO neutrals) */
+  --ta-bg: #f1f2f1; --ta-panel: #ffffff; --ta-panel-2: #e7e8e7; --ta-line: #d1d1d2;
+  --ta-ink: #1b1d1f; --ta-muted: #5f6062;
+  /* 2XKO signature lime: fills only (too light for text on white) */
+  --ta-lime: #cdf564; --ta-lime-2: #e3fa9f;
+  /* status hues, dark enough to read as text on white (4.5:1+) and to carry white text as fills */
+  --ta-pink: #b3165e; --ta-yellow: #8a6a00; --ta-cyan: #0b6f78; --ta-ok: #2b7a2f; --ta-bad: #c0262d;
+  /* pastel tints from the 2XKO champion cards */
+  --ta-tint-pink: #ffd6e7; --ta-tint-red: #ffd6d6; --ta-tint-cyan: #dcf9f7; --ta-tint-lav: #dcdcf9; --ta-tint-yellow: #fff4c1; --ta-tint-peach: #f9ebdc;
+  --ta-display: 'Archivo', 'Arial Black', 'Helvetica Neue', sans-serif;
+  --ta-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
   --ta-mono: 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace;
-  color-scheme: dark;
+  color-scheme: light;
   background: var(--ta-bg); color: var(--ta-ink); font-family: var(--ta-body); font-size: 15px; line-height: 1.45;
-  background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,.05) 1px, transparent 0); background-size: 14px 14px;
-  overflow: hidden;
+  background-image: radial-gradient(circle at 1px 1px, rgba(27,29,31,.07) 1px, transparent 0); background-size: 14px 14px;
+  overflow-x: clip;
 }
 .ta-wrap { padding: 28px max(16px, 4vw) 48px; display: grid; gap: 40px; max-width: 1240px; margin: 0 auto; }
 .ta h2, .ta h1 { font-family: var(--ta-display); font-weight: 400; text-transform: uppercase; letter-spacing: .01em; margin: 0; text-wrap: balance; line-height: .95; }
 
 /* hero */
 .ta-hero { position: relative; isolation: isolate; padding: 30px max(16px, 4vw) 34px; border-bottom: 3px solid var(--ta-pink); overflow: hidden; }
-.ta-hero::before { content: ""; position: absolute; inset: -40% -10% auto auto; width: 60%; height: 220%; background: linear-gradient(115deg, transparent 0 30%, rgba(255,45,141,.22) 30% 46%, rgba(255,224,61,.16) 46% 54%, transparent 54%); z-index: -1; }
+.ta-hero::before { content: ""; position: absolute; inset: -40% -10% auto auto; width: 60%; height: 220%; background: linear-gradient(115deg, transparent 0 30%, rgba(205,245,100,.55) 30% 44%, rgba(220,220,249,.7) 44% 52%, transparent 54%); z-index: -1; }
 .ta-hero-in { max-width: 1240px; margin: 0 auto; display: grid; gap: 12px; }
 .ta-eyebrow { font-weight: 700; font-size: 12px; letter-spacing: .24em; text-transform: uppercase; color: var(--ta-yellow); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .ta-eyebrow i { width: 26px; height: 3px; background: var(--ta-pink); transform: skewX(-30deg); display: inline-block; }
@@ -223,20 +229,107 @@
 .ta-sess .meta { font-size: 12px; color: var(--ta-muted); }
 .ta-sess .ta-cmd code { font-size: 12px; padding: 7px 9px; }
 .ta-wt-more { justify-self: start; }
+
+/* sticky navbar + pages */
+.ta-nav { position: sticky; top: 0; z-index: 30; background: rgba(12,10,23,.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 2px solid var(--ta-pink); }
+.ta-nav-in { max-width: 1240px; margin: 0 auto; padding: 0 max(16px, 4vw); display: flex; align-items: center; gap: 10px 18px; min-height: 58px; }
+.ta-brand { font-family: var(--ta-display); font-size: 24px; font-style: italic; text-transform: uppercase; color: var(--ta-ink); text-decoration: none; white-space: nowrap; transform: skewX(-6deg); }
+.ta-brand span { color: var(--ta-pink); }
+.ta-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; flex: 1; min-width: 0; align-self: stretch; }
+.ta-tabs::-webkit-scrollbar { display: none; }
+.ta-tab { position: relative; display: inline-flex; align-items: center; gap: 7px; padding: 0 14px; font: 700 12px var(--ta-body); letter-spacing: .14em; text-transform: uppercase; color: var(--ta-muted); text-decoration: none; white-space: nowrap; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.ta-tab:hover { color: var(--ta-ink); }
+.ta-tab[aria-current="page"] { color: var(--ta-yellow); border-bottom-color: var(--ta-yellow); }
+.ta-tab:focus-visible { outline: 2px solid var(--ta-cyan); outline-offset: -4px; }
+.ta-tab .n { min-width: 18px; padding: 1px 6px; font-size: 11px; letter-spacing: 0; text-align: center; color: var(--ta-bg); background: var(--bc, var(--ta-muted)); border-radius: 9px; font-variant-numeric: tabular-nums; }
+.ta-tab .n:empty { display: none; }
+.ta-nav-right { display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.ta-nav .ta-sync { font-size: 11px; }
+.ta-page-title { display: none; }
+.ta [data-page][hidden] { display: none !important; }
+@media (max-width: 900px) { .ta-nav .ta-sync { display: none; } }
+@media (max-width: 1120px) {
+  .ta-nav-in { flex-wrap: wrap; padding-top: 8px; gap: 6px 12px; }
+  .ta-brand { font-size: 20px; }
+  .ta-tabs { order: 3; flex-basis: 100%; min-height: 40px; }
+  .ta-nav-right { margin-left: auto; }
+}
+
+/* ---- 2XKO light theme: component overrides ----------------------------------- */
+.ta h1, .ta h2, .ta-sub, .ta-combo h3, .ta-draft h3, .ta-wt h3, .ta-meter .num, .ta-alert .days, .ta-lamp, .ta-brand { font-family: var(--ta-display); font-stretch: 125%; font-weight: 900; letter-spacing: -.01em; }
+.ta-hero { background: var(--ta-panel); border-bottom: 2px solid var(--ta-ink); }
+.ta-hero h1 { color: var(--ta-ink); }
+.ta-hero h1 span { color: var(--ta-ink); background: var(--ta-lime); padding: 0 .12em; }
+.ta-hero h1 em { -webkit-text-stroke: 2px var(--ta-ink); }
+.ta-eyebrow { color: var(--ta-ink); }
+.ta-eyebrow i { background: var(--ta-lime); height: 6px; }
+.ta-round { background: var(--ta-ink); color: var(--ta-lime); }
+.ta-meter { box-shadow: 0 1px 0 var(--ta-line), 0 0 0 1px var(--ta-line); }
+.ta-scroll, .ta-combo, .ta-draft, .ta-wt, .ta-switch, .ta-wtbar, .ta-follow li, .ta-jobs li { box-shadow: 0 1px 2px rgba(27,29,31,.06); }
+.ta tbody tr:hover, .ta tr.is-picked { background: #f6f7f6; }
+/* buttons: ink fill, lime on hover (as on the 2XKO site) */
+.ta-btn { background: var(--ta-ink); color: var(--ta-bg); }
+.ta-btn:hover { background: var(--ta-lime); color: var(--ta-ink); }
+.ta-btn.ghost { background: transparent; color: var(--ta-ink); box-shadow: inset 0 0 0 2px var(--ta-ink); }
+.ta-btn.ghost:hover { background: var(--ta-lime); color: var(--ta-ink); }
+.ta-copy.done, .ta-copy.done::after { background: var(--ta-lime); color: var(--ta-ink); }
+.ta-chip[aria-pressed="true"] { background: var(--ta-ink); border-color: var(--ta-ink); color: var(--ta-lime); }
+.ta-cmd code { background: #f6f7f6; color: var(--ta-ink); }
+.ta-input { background: var(--ta-panel); }
+.ta-btn:focus-visible, .ta-chip:focus-visible, .ta-input:focus-visible, .ta-filter-btn:focus-visible { outline-color: var(--ta-ink); }
+/* no neon glows in light mode */
+.ta-life i.on, .ta-sync i, .ta-sess .nm .dot, .ta-gauge .fill { box-shadow: none; }
+.ta-life i { background: var(--ta-panel-2); }
+.ta-lamp { background: var(--ta-panel-2); color: var(--ta-muted); }
+.ta-lamp.on { background: var(--ta-lime); color: var(--ta-ink); box-shadow: none; }
+.ta-card.reply { background: linear-gradient(90deg, var(--ta-tint-pink), var(--ta-panel) 60%); }
+.ta-alert { background: linear-gradient(100deg, var(--ta-tint-red), var(--ta-panel) 70%); }
+.ta-tag { color: #fff; }
+.ta-pill.reply { color: #fff; }
+.ta-pill.reply:hover { background: var(--ta-lime); border-color: var(--ta-ink); color: var(--ta-ink); }
+.ta-filter-menu { background: var(--ta-panel); box-shadow: 0 12px 32px rgba(27,29,31,.16); }
+.ta-filter-menu label:hover { background: var(--ta-bg); }
+.ta-filter-menu input, .ta-draft li input { accent-color: var(--ta-ink); }
+.ta-filter-btn.active { border-color: var(--ta-ink); color: var(--ta-ink); box-shadow: inset 0 -3px 0 var(--ta-lime); }
+.ta-gauge { background: var(--ta-panel-2); }
+.ta-sess li { background: #f8f9f8; }
+.ta-cmd code, .ta-sess .ta-cmd code { border-color: var(--ta-line); }
+/* fixed navbar: light bar, ink rule, lime block on the current page */
+.ta-nav { position: fixed; top: 0; left: 0; right: 0; background: rgba(241,242,241,.94); border-bottom: 2px solid var(--ta-ink); }
+.ta-nav-spacer { height: var(--ta-nav-h, 60px); }
+.ta-brand { color: var(--ta-ink); }
+.ta-brand span { color: var(--ta-ink); background: var(--ta-lime); padding: 0 4px; }
+.ta-tab { color: var(--ta-muted); border-bottom: 0; margin: 8px 0; }
+.ta-tab:hover { color: var(--ta-ink); background: var(--ta-panel-2); }
+.ta-tab[aria-current="page"] { color: var(--ta-ink); background: var(--ta-lime); }
+.ta-tab:focus-visible { outline-color: var(--ta-ink); }
+.ta-tab .n { color: #fff; }
+.ta-nav .ta-sync { color: var(--ta-ok); }
+.ta-brand { font-size: 21px; }
+.ta-tab { padding: 0 11px; letter-spacing: .08em; gap: 6px; }
+.ta-nav-in { gap: 8px 14px; }
+@media (max-width: 1380px) { .ta-nav .ta-sync { display: none; } }
 </style>
 
 <div class="ta">
-  <header class="ta-hero" id="top">
+  <nav class="ta-nav" aria-label="Dashboard pages">
+    <div class="ta-nav-in">
+      <a class="ta-brand" href="#/overview">Ticket <span>Arena</span></a>
+      <div class="ta-tabs" data-draw="nav-tabs"></div>
+      <div class="ta-nav-right"><div class="ta-sync"><i></i>Every <span data-cfg="refreshMinutes">15</span> min</div><span data-draw="refresh-btn"></span></div>
+    </div>
+  </nav>
+  <div class="ta-nav-spacer" aria-hidden="true"></div>
+  <header class="ta-hero" id="top" data-page="overview">
     <div class="ta-hero-in">
       <div class="ta-eyebrow"><i></i><span data-cfg="repo">your repo</span> <i></i><span data-cfg="login">you</span></div>
       <h1>Ticket <span>Arena</span> <em>2x</em></h1>
       <p class="ta-lead"><b data-draw="lead-promoting" data-source="stats" data-field="promoting" data-row="0">—</b> ticket on its way to <span data-cfg="staging">staging</span>, <b data-draw="lead-merged" data-source="stats" data-field="merged" data-row="0">—</b> merged to main, and <b data-draw="lead-reply" data-source="stats" data-field="needsReply" data-row="0">—</b> review comments with no reply from you yet. Tickets past the stuck limit: <b data-draw="lead-stuck" data-source="stats" data-field="stuck" data-row="0">—</b>.</p>
-      <div class="ta-syncrow"><div class="ta-sync"><i></i>Syncs from GitHub every <span data-cfg="refreshMinutes">15</span> minutes</div><span data-draw="refresh-btn"></span></div>
-    </div>
+          </div>
   </header>
 
   <div class="ta-wrap">
-    <section class="ta-meters" id="meters" aria-label="Summary">
+    <section class="ta-meters" id="meters" data-page="overview" aria-label="Summary">
       <div class="ta-meter" style="--c: var(--ta-yellow)"><div class="lbl">In review</div><div class="num" data-draw="m-review" data-source="stats" data-field="review" data-row="0">—</div><div class="sub">PR open against main</div></div>
       <div class="ta-meter" style="--c: var(--ta-cyan)"><div class="lbl">Merged to main</div><div class="num" data-draw="m-merged" data-source="stats" data-field="merged" data-row="0">—</div><div class="sub">Done unless it needs staging</div></div>
       <div class="ta-meter" style="--c: var(--ta-pink)"><div class="lbl">Promoting</div><div class="num" data-draw="m-promoting" data-source="stats" data-field="promoting" data-row="0">—</div><div class="sub">PR open to a staging branch</div></div>
@@ -245,7 +338,7 @@
       <div class="ta-meter" style="--c: var(--ta-bad)"><div class="lbl">Stuck</div><div class="num" data-draw="m-stuck" data-source="stats" data-field="stuck" data-row="0">—</div><div class="sub"><span data-cfg="stuckReview">2</span>+ days in review or promotion</div></div>
     </section>
 
-    <section class="ta-sec" id="stuck">
+    <section class="ta-sec" id="stuck" data-page="overview">
       <div class="ta-head">
         <h2><span class="ta-round">Danger zone</span> Stuck tickets</h2>
       </div>
@@ -253,7 +346,7 @@
       <ul class="ta-alerts" data-draw="stuck-list" data-source="stage_age"></ul>
     </section>
 
-    <section class="ta-sec" id="tickets">
+    <section class="ta-sec" id="tickets" data-page="tickets">
       <div class="ta-head">
         <h2><span class="ta-round">Round 1</span> Ticket progress</h2>
         <div class="ta-controls"><div class="ta-filter" data-filter-key="tickets"><span class="ta-sortsel">Show</span><button class="ta-filter-btn" type="button" aria-haspopup="true" aria-expanded="false" data-draw="filter-label-tickets">All</button><div class="ta-filter-menu" hidden data-draw="filter-menu-tickets"></div></div><label class="ta-sortsel" for="ta-t-sort">Sort <select class="dash-select" id="ta-t-sort"><option value="updated">Recently updated</option><option value="days">Longest in stage</option><option value="stage">By stage</option><option value="ticket">Ticket number</option><option value="lines">Biggest change</option></select></label></div>
@@ -267,7 +360,7 @@
       </div>
     </section>
 
-    <section class="ta-sec" id="comments">
+    <section class="ta-sec" id="comments" data-page="reviews">
       <div class="ta-head">
         <h2><span class="ta-round">Round 2</span> PR comments</h2>
 
@@ -284,12 +377,12 @@
       <ul class="ta-feed" data-draw="comment-feed" data-source="comments" aria-live="polite"></ul>
     </section>
 
-    <section class="ta-sec" id="team">
+    <section class="ta-sec" id="team" data-page="team">
       <div class="ta-head">
         <h2><span class="ta-round">Round 4</span> Team PRs</h2>
 <div class="ta-controls"><div class="ta-filter" data-filter-key="team"><span class="ta-sortsel">Show</span><button class="ta-filter-btn" type="button" aria-haspopup="true" aria-expanded="false" data-draw="filter-label-team">All</button><div class="ta-filter-menu" hidden data-draw="filter-menu-team"></div></div><label class="ta-sortsel" for="ta-team-sort">Sort <select class="dash-select" id="ta-team-sort"><option value="status">Needs attention first</option><option value="newest">Newest PRs</option><option value="oldest">Open the longest</option><option value="author">By author</option><option value="lines">Biggest change</option><option value="updated">Recently updated</option></select></label></div>
       </div>
-      <p class="ta-note">Open PRs from everyone in your Chat list. A pink "replied to you" badge means someone answered one of your review comments or @mentioned you and you haven't responded yet; those PRs sort to the top. Draft review asks Claude to review the PR and write comments for you. Nothing reaches GitHub until you press Post. PRs that request your review are drafted automatically.</p>
+      <p class="ta-note">Open PRs from everyone in your Chat list. A pink "replied to you" badge means someone answered one of your review comments or @mentioned you and you haven't responded yet; those PRs sort to the top. Draft review asks Claude to review the PR and write comments for you. Nothing reaches GitHub until you press Post. Drafting needs a Claude Code session watching requests.log and uses tokens.</p>
       <div class="ta-scroll">
         <table data-source="team" data-row-key="pr" aria-label="Team PRs">
           <thead><tr><th data-field="pr">PR</th><th data-field="name">Author</th><th data-field="title">Title</th><th data-field="decision">Status</th><th data-field="opened">Open for</th><th data-field="lines">Lines</th><th>Review</th></tr></thead>
@@ -301,7 +394,7 @@
       <div class="ta-drafts" data-draw="draft-cards" data-source="drafts"></div>
     </section>
 
-    <section class="ta-sec" id="worktrees">
+    <section class="ta-sec" id="worktrees" data-page="worktrees">
       <div class="ta-head">
         <h2><span class="ta-round">Round 5</span> Worktrees</h2>
         <div class="ta-controls"><label class="ta-sortsel"><input type="checkbox" id="ta-wt-all"> Show all worktrees</label></div>
@@ -312,7 +405,7 @@
       <div class="ta-wts" data-draw="wt-list" data-source="worktrees"></div>
     </section>
 
-    <section class="ta-sec" id="combos">
+    <section class="ta-sec" id="combos" data-page="commands">
       <div class="ta-head">
         <h2><span class="ta-round">Round 3</span> Combo moves</h2>
         <div class="ta-pick">
@@ -618,7 +711,7 @@ dash.draw('ticket-rows', (tb) => {
     const b = tr.insertCell(); const btn = document.createElement('button');
     btn.type = 'button'; btn.className = 'ta-btn ghost'; btn.textContent = t.ticket === window.ta.ticket ? 'Loaded' : 'Load';
     btn.setAttribute('aria-label', `Load ${t.key} into combo moves`);
-    btn.onclick = () => { pickTicket(t); const c = document.getElementById('combos'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    btn.onclick = () => { pickTicket(t); window.taGo('commands'); };
     b.append(btn);
   });
 });
@@ -651,7 +744,7 @@ dash.draw('stuck-list', (ul) => {
     const acts = document.createElement('div'); acts.className = 'acts';
     const open = document.createElement('a'); open.className = 'ta-btn ghost'; open.href = t.url; open.target = '_blank'; open.rel = 'noopener'; open.textContent = 'Open PR'; open.style.textDecoration = 'none';
     const load = document.createElement('button'); load.type = 'button'; load.className = 'ta-btn'; load.textContent = 'Load combo';
-    load.onclick = () => { window.taPick(t); const c = document.getElementById('combos'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    load.onclick = () => { window.taPick(t); window.taGo('commands'); };
     acts.append(open, load);
     li.append(top, p, why, acts);
     ul.append(li);
@@ -1115,4 +1208,88 @@ dash.draw('wt-list', (box) => {
   if (hidden && !window.ta.wtAll) { const p = document.createElement('p'); p.className = 'ta-note'; p.style.gridColumn = '1 / -1'; p.textContent = `${hidden} idle or agent worktree(s) hidden.`; box.append(p); }
 });
 dash.onData && dash.onData(() => { dash.draw('wt-new'); dash.draw('wt-key'); });
+</script>
+
+<script>
+// ---- pages + sticky navbar --------------------------------------------------
+// Each section has data-page; the URL hash (#/team) picks the page, so back/forward and reload keep your place.
+window.TA_PAGES = [
+  { id: 'overview', label: 'Overview', key: '1' },
+  { id: 'tickets', label: 'Tickets', key: '2' },
+  { id: 'reviews', label: 'PR comments', key: '3' },
+  { id: 'team', label: 'Team PRs', key: '4' },
+  { id: 'worktrees', label: 'Worktrees', key: '5' },
+  { id: 'commands', label: 'Commands', key: '6' },
+];
+const taPageFromHash = () => { const h = (location.hash.match(/^#\/([\w-]+)/) || [])[1]; return window.TA_PAGES.some((p) => p.id === h) ? h : 'overview'; };
+window.taShowPage = () => {
+  const cur = taPageFromHash();
+  window.ta.page = cur;
+  document.querySelectorAll('.ta [data-page]').forEach((el) => { el.hidden = el.dataset.page !== cur; });
+  document.querySelectorAll('.ta-tab').forEach((a) => { if (a.dataset.id === cur) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  // keep the current tab in view when the tab strip scrolls sideways (phones)
+  const tab = document.querySelector(`.ta-tab[data-id="${cur}"]`); const strip = tab && tab.parentElement;
+  if (strip && strip.scrollWidth > strip.clientWidth) strip.scrollTo({ left: Math.max(0, tab.offsetLeft - strip.offsetLeft - 24) });
+  const label = (window.TA_PAGES.find((p) => p.id === cur) || {}).label;
+  document.title = `${label} · Ticket Arena`;
+};
+window.taGo = (id) => {
+  if (taPageFromHash() !== id) location.hash = '#/' + id; else window.taShowPage();
+  window.scrollTo({ top: 0 });
+};
+window.addEventListener('hashchange', () => { window.taShowPage(); window.scrollTo({ top: 0 }); });
+// keys 1-6 switch pages (not while typing)
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable) return;
+  const p = window.TA_PAGES.find((x) => x.key === e.key); if (p) window.taGo(p.id);
+});
+
+// badge counts on the tabs: what needs you on each page
+const taNavCounts = () => {
+  const ok = (id) => { const d = dash.data(id); return d.status === 'ok' ? d.data : null; };
+  const st = ok('stats'); const s0 = Array.isArray(st) ? st[0] : st;
+  const team = ok('team'); const wt = ok('worktrees');
+  const teamN = Array.isArray(team) ? team.filter((r) => r.repliesToMe > 0 || (r.requestedMe === 'yes' && !r.myReview && r.isDraft === 'no')).length : 0;
+  const wtN = wt && wt.worktrees ? wt.worktrees.filter((r) => r.sessions.length && r.sessions[0].status === 'new').length : 0;
+  return {
+    overview: s0 && s0.stuck ? [s0.stuck, 'var(--ta-bad)', 'stuck'] : null,
+    tickets: s0 && s0.review ? [s0.review, 'var(--ta-yellow)', 'in review'] : null,
+    reviews: s0 && s0.needsReply ? [s0.needsReply, 'var(--ta-pink)', 'need your reply'] : null,
+    team: teamN ? [teamN, 'var(--ta-pink)', 'waiting on you'] : null,
+    worktrees: wtN ? [wtN, 'var(--ta-bad)', 'chats should start fresh'] : null,
+  };
+};
+dash.draw('nav-tabs', (box) => {
+  if (!box.dataset.built) {
+    box.dataset.built = '1';
+    window.TA_PAGES.forEach((p) => {
+      const a = document.createElement('a'); a.className = 'ta-tab'; a.href = '#/' + p.id; a.dataset.id = p.id;
+      a.title = `${p.label} (key ${p.key})`;
+      const t = document.createElement('span'); t.textContent = p.label;
+      const n = document.createElement('span'); n.className = 'n';
+      a.append(t, n);
+      a.addEventListener('click', (e) => { e.preventDefault(); window.taGo(p.id); });
+      box.append(a);
+    });
+    window.taShowPage();
+  }
+  const counts = taNavCounts();
+  box.querySelectorAll('.ta-tab').forEach((a) => {
+    const n = a.querySelector('.n'); const c = counts[a.dataset.id];
+    n.textContent = c ? String(c[0]) : '';
+    if (c) { n.style.setProperty('--bc', c[1]); n.setAttribute('aria-label', `${c[0]} ${c[2]}`); } else n.removeAttribute('aria-label');
+  });
+});
+// the navbar is position: fixed; keep the spacer under it exactly as tall as the bar
+(() => {
+  const nav = document.querySelector('.ta-nav'); const root = document.querySelector('.ta');
+  if (!nav || !root) return;
+  const fit = () => root.style.setProperty('--ta-nav-h', nav.offsetHeight + 'px');
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(nav); else window.addEventListener('resize', fit);
+})();
+window.taShowPage();
+// tab widths change once the web fonts load: re-center the current tab then
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => window.taShowPage());
+window.addEventListener('load', () => window.taShowPage());
 </script>
